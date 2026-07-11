@@ -3,6 +3,7 @@ from diagrams.aws.general import Users, TraditionalServer, GenericFirewall
 from diagrams.aws.security import SingleSignOn, Guardduty, SecurityHub
 from diagrams.aws.network import APIGateway
 from diagrams.aws.compute import EC2, Lambda, Fargate
+from diagrams.aws.devtools import Codepipeline
 from diagrams.aws.integration import StepFunctions
 from diagrams.aws.storage import S3
 from diagrams.aws.database import RDS
@@ -57,24 +58,34 @@ with Diagram(
             wf >> Edge(label="Top-Down: AI 심사 바이패스", style="dashed") >> board
             board >> Edge(label="승인 시") >> tf
 
-        with Cluster("Top-down Account (공식 과제)"):
+        with Cluster("Top-down Account (공식 과제 · 상시 가동)"):
             td_dev = EC2("개발 서버")
             gitlab = Gitlab("GitLab\nCI/CD")
             secproc = GenericFirewall("사내 정보보안\n프로세스 확인")
-            prod = EC2("운영 서버\n(별도 구동)")
+            prod = EC2("운영 서버\n(상시 가동)")
 
             td_dev >> Edge(label="개발 후") >> gitlab
             gitlab >> Edge(label="배포 전 확인") >> secproc >> prod
 
-        with Cluster("Bottom-up Sandbox Account (자율 과제)"):
+        with Cluster("Bottom-up Sandbox Account (자율 과제 · 시간제 가동: 셧다운/웨이크업)"):
             bu_dev = EC2("개발 서버")
+            bu_git = Gitlab("Git\n(형상관리)")
+            bu_pipe = Codepipeline("CodePipeline\n(빌드·이미지 스캔)")
             s3 = S3("S3")
             rds = RDS("RDS")
-            app = Fargate("과제 앱\n(ECS/Fargate)")
+            app = Fargate("과제 앱\n(Fargate · dev 배포)")
 
             bu_dev >> Edge(label="개발 시 활용", style="dashed") >> s3
             bu_dev >> Edge(label="개발 시 활용", style="dashed") >> rds
-            bu_dev >> Edge(label="CI/CD 배포") >> app
+            bu_dev >> Edge(label="개발 후") >> bu_git >> bu_pipe >> Edge(label="스캔 통과 시\ndev 배포") >> app
+
+        app >> Edge(
+            label="격상 이관\n(보드·정보보호팀 승인 게이트)",
+            style="dashed",
+            color="firebrick",
+            fontcolor="firebrick",
+            penwidth="2",
+        ) >> secproc
 
         with Cluster("보안·관측 (전 계정 공통)"):
             trail = Cloudtrail("CloudTrail")
