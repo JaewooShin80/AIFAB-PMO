@@ -1,6 +1,6 @@
-# AWS 기반 바텀업 샌드박스 구축·운영 기획안
+# AWS 기반 샌드박스 구축·운영 기획안
 
-팹 운영 현장 주도(Bottom-up) 과제 지원 플랫폼
+AI SAND BOX : 현장 주도(Bottom-up) 과제 지원 플랫폼
 
 - 문서 구분 : 운영 기획(안)
 - 버전 : v2.0 (재작성본, 기존 보완본 통합)
@@ -74,7 +74,7 @@ AWS Organization으로 Shared Services(공통), Top-down(공식 과제), Bottom-
 
 | **영역** | **AWS 서비스** | **역할** |
 |:---|:---|:---|
-| 계정 거버넌스 | AWS Organizations (SCP) | 탑다운/바텀업 계정 분리, 금지 행위의 조직 차원 차단 |
+| 계정 거버넌스 | AWS Organizations (SCP) | 탑다운/바텀업 계정 분리, 금지 행위의 조직 차원 차단 (상세: 3.2) |
 | 인증·권한 | IAM Identity Center | 사내 SSO 연동, 권한세트 기반 최소권한 부여 |
 | 신청·승인 자동화 | API Gateway, Lambda, Step Functions | 신청 접수, 심사 워크플로, 승인·프로비저닝 오케스트레이션 |
 | AI 심사·리포트 | Amazon Bedrock(Claude), Knowledge Bases | 적합성 사전 심사, 주간 리포트 자동 생성(RAG 기반) |
@@ -83,6 +83,38 @@ AWS Organization으로 Shared Services(공통), Top-down(공식 과제), Bottom-
 | 저장소 | S3, RDS, DynamoDB | 데이터·산출물 저장, 과제 DB, 심사 결과 저장 |
 | 보안·관측 | CloudTrail, GuardDuty, Security Hub, CloudWatch, Config, Inspector, Macie | 감사 기록, 위협 탐지, 통합 대시보드, 로그·지표 |
 | 분석·리포트 연계 | Athena + Databricks | 사용량 집계·분석, 리포트 데이터 공급 |
+
+### 3.2 계정 거버넌스 세팅 (Organizations · SCP)
+
+계정 거버넌스의 원칙은 **"계정 안에서는 자율, 조직의 금지선은 강제"**이다. 사내망 한정·아웃바운드 통제는 VPC 설정(4장)으로 구현하지만, 그 설정을 과제 수행자가 임의로 변경할 수 없도록 조직 레벨의 SCP로 잠근다. SCP는 계정 내부의 IAM 권한과 무관하게 적용되므로, 샌드박스 사용자에게 넓은 자율성을 부여하면서도 격리 전제가 훼손되지 않음을 플랫폼 차원에서 보장한다.
+
+#### 3.2.1 조직(OU) 구조
+
+```
+Root (관리 계정: 조직·결제 관리 전용, 워크로드 배치 금지)
+├── OU: Shared Services   — 신청 포털·승인 자동화·AI Agent·조직 로그 집적
+├── OU: Top-down          — AIFAB 공식 과제 계정
+└── OU: Bottom-up Sandbox — 바텀업 과제 계정 (아래 SCP 가드레일 적용)
+```
+
+- 관리 계정은 SCP가 적용되지 않는 유일한 계정이므로 워크로드를 두지 않고 접근을 최소 인원으로 제한한다.
+- 신규 샌드박스 계정은 과제 승인 시 Bottom-up Sandbox OU 아래에 자동 생성되며, OU에 부착된 SCP를 즉시 상속받는다(계정별 개별 설정 불필요).
+
+#### 3.2.2 SCP 가드레일 목록
+
+기본 정책(FullAWSAccess)을 유지한 채 아래 Deny 가드레일을 Bottom-up Sandbox OU에 부착한다. 권한 부여는 Identity Center 권한세트가 담당하고, SCP는 차단 전용으로만 사용한다.
+
+| **#** | **가드레일** | **차단 대상(예)** | **목적** |
+|:---|:---|:---|:---|
+| 1 | 서울 리전 외 API 호출 차단 | `aws:RequestedRegion ≠ ap-northeast-2` 전체 거부 | 사내망 연동·모니터링이 없는 리전으로 격리 환경이 번지는 것 방지 |
+| 2 | 인터넷 경로 생성 금지 | Internet Gateway 생성·연결, EIP 할당 | 인터넷 인바운드 차단 전제를 사용자 변경으로부터 보호 |
+| 3 | 네트워크 핵심 자원 변경 제한 | VPC·서브넷·라우팅·NAT·Transit Gateway 연결 변경 (Terraform 프로비저닝 역할만 예외 허용) | 사내망 한정·아웃바운드 화이트리스트 구조 유지 |
+| 4 | 감사·보안 서비스 비활성화 금지 | CloudTrail 중지·삭제, GuardDuty·Config·Security Hub 해제 | 전수 감사 기록과 위협 탐지 체계 보호 |
+| 5 | S3 퍼블릭 노출 금지 | Block Public Access 해제, 퍼블릭 버킷 정책 | 산출물·데이터의 사외 노출 방지 |
+| 6 | 거버넌스 이탈 금지 | 조직 탈퇴(LeaveOrganization), 계정 폐쇄 | 통제 범위 밖으로의 계정 이탈 방지 |
+
+- 가드레일 3의 예외는 `aws:PrincipalArn` 조건으로 Shared Services의 Terraform 프로비저닝 역할만 허용한다. 즉 네트워크 변경은 IaC 코드 리뷰(PR)를 거친 자동화 경로로만 가능하다.
+- SCP는 무비용이며, 목록의 추가·변경은 AI Board 정책 심의를 거쳐 AI 인프라팀이 반영한다.
 
 ## 4. 네트워크(VPC/Subnet) 구성도
 
