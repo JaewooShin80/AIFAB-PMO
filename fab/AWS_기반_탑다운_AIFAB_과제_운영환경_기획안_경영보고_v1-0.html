@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AWS 기반 탑다운(AIFAB) 과제 운영환경 구축·운영 기획안 — 경영 보고</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  :root {
+    --ink: #14181f; --muted: #5b6472; --accent: #ea002c; --accent-soft: #fdeef1;
+    --line: #e3e7ee; --bg: #eef1f5; --card: #f8fafc; --navy: #1f2a44;
+  }
+  html { scroll-snap-type: y mandatory; }
+  body { background: var(--bg); font-family: "Pretendard", "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans KR", sans-serif; color: var(--ink); }
+  .slide {
+    width: min(1280px, 100vw); aspect-ratio: 16 / 9; margin: 24px auto; background: #fff;
+    border: 1px solid var(--line); box-shadow: 0 8px 28px rgba(20,24,31,.08);
+    padding: 3.2% 3.8%; display: flex; flex-direction: column; scroll-snap-align: center;
+    position: relative; overflow: hidden;
+  }
+  .kicker { font-size: 13px; font-weight: 700; letter-spacing: .14em; color: var(--accent); text-transform: uppercase; margin-bottom: 8px; }
+  h1 { font-size: 44px; line-height: 1.25; letter-spacing: -.01em; }
+  h2 { font-size: 30px; letter-spacing: -.01em; margin-bottom: 6px; }
+  .sub { color: var(--muted); font-size: 16px; margin-top: 14px; line-height: 1.6; }
+  .pagenum { position: absolute; bottom: 18px; right: 28px; font-size: 12px; color: var(--muted); }
+  .foot { position: absolute; bottom: 18px; left: 28px; font-size: 12px; color: var(--muted); }
+  .rule { height: 3px; width: 56px; background: var(--accent); border-radius: 2px; margin: 14px 0 22px; }
+  .body { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+  .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 26px; flex: 1; min-height: 0; }
+  .bullets { list-style: none; display: flex; flex-direction: column; gap: 14px; }
+  .bullets li { padding-left: 18px; position: relative; font-size: 17px; line-height: 1.55; }
+  .bullets li::before { content: ""; position: absolute; left: 0; top: .62em; width: 7px; height: 7px; border-radius: 2px; background: var(--accent); }
+  .bullets b { color: var(--navy); }
+  .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-top: auto; }
+  .kpi { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 16px 18px; }
+  .kpi .v { font-size: 26px; font-weight: 800; color: var(--navy); letter-spacing: -.01em; }
+  .kpi .v em { font-style: normal; color: var(--accent); }
+  .kpi .k { font-size: 12.5px; color: var(--muted); margin-top: 5px; line-height: 1.4; }
+  table { width: 100%; border-collapse: collapse; font-size: 15.5px; }
+  th, td { padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--line); line-height: 1.5; vertical-align: top; }
+  thead th { background: var(--navy); color: #fff; font-weight: 600; font-size: 14px; }
+  td.h { font-weight: 700; color: var(--navy); white-space: nowrap; }
+  .hl { background: var(--accent-soft); }
+  .fig { flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 12px; }
+  .fig img { max-width: 100%; max-height: 100%; object-fit: contain; }
+  .callout { border-left: 4px solid var(--accent); background: var(--accent-soft); padding: 14px 18px; border-radius: 0 8px 8px 0; font-size: 16.5px; line-height: 1.55; }
+  .callout b { color: var(--accent); }
+  .steps { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; }
+  .step { background: var(--card); border: 1px solid var(--line); border-radius: 9px; padding: 12px 10px; font-size: 13px; line-height: 1.45; }
+  .step .n { display: inline-block; width: 20px; height: 20px; border-radius: 50%; background: var(--navy); color: #fff; font-size: 11.5px; font-weight: 700; text-align: center; line-height: 20px; margin-bottom: 7px; }
+  .step b { display: block; font-size: 13.5px; color: var(--navy); }
+  .cover { justify-content: center; background: linear-gradient(135deg, #1f2a44 0%, #131a2c 100%); color: #fff; }
+  .cover .kicker { color: #ff7d92; }
+  .cover h1 { color: #fff; font-size: 46px; }
+  .cover .meta { margin-top: 40px; font-size: 15px; color: #b8c0d0; line-height: 2; }
+  .cover .rule { width: 72px; }
+  .tag { display: inline-block; font-size: 12.5px; font-weight: 700; background: var(--accent-soft); color: var(--accent); border-radius: 999px; padding: 4px 12px; margin-left: 10px; vertical-align: middle; }
+  @media print {
+    body { background: #fff; }
+    .slide { width: 100%; height: 100vh; aspect-ratio: auto; margin: 0; border: none; box-shadow: none; page-break-after: always; }
+    @page { size: A4 landscape; margin: 0; }
+  }
+</style>
+</head>
+<body>
+
+<!-- 1. 표지 -->
+<section class="slide cover">
+  <div class="kicker">AIFAB · Top-down 운영 기획(안)</div>
+  <h1>AWS 기반 탑다운(AIFAB) 과제<br>운영환경 구축·운영 기획안</h1>
+  <div class="rule"></div>
+  <div class="meta">
+    T2Y 공식 과제를 위한 상시 가동 운영 플랫폼<br>
+    v1.0 · 2026. 07. 11 · 작성 신재우 · 사내 검토용
+  </div>
+</section>
+
+<!-- 2. 배경·목적 -->
+<section class="slide">
+  <div class="kicker">Why</div>
+  <h2>추진 배경 및 목적</h2>
+  <div class="rule"></div>
+  <div class="body">
+    <ul class="bullets">
+      <li>탑다운 과제는 사업 계획으로 확정된 <b>전사 공식 과제</b> — 실사용자 대상 <b>상시 서비스</b>가 전제</li>
+      <li>실험용(dev급) 바텀업 샌드박스와 달리 <b>운영급 환경</b> 필요: 상시 가동, 무중단 배포, 실데이터 연동</li>
+      <li>바텀업과 <b>공통 Landing Zone을 공유</b>하여 추가 구축 비용·기간 최소화</li>
+      <li>바텀업 우수과제가 격상될 때 이를 수용하는 <b>목적지 환경</b> — 격상 파이프라인의 완성</li>
+    </ul>
+    <div class="kpis">
+      <div class="kpi"><div class="v">24×365</div><div class="k">상시 가동 · Multi-AZ 이중화</div></div>
+      <div class="kpi"><div class="v">2단계</div><div class="k">스테이징 → 운영 배포 + 승인 게이트</div></div>
+      <div class="kpi"><div class="v">통제 하 <em>허용</em></div><div class="k">실데이터 연동 (정보보호팀 사전 심사)</div></div>
+      <div class="kpi"><div class="v">공용 기반</div><div class="k">계정·인증·보안·IaC는 샌드박스와 공유</div></div>
+    </div>
+  </div>
+  <div class="foot">AWS 기반 탑다운(AIFAB) 과제 운영환경 기획안</div><div class="pagenum">2</div>
+</section>
+
+<!-- 3. 바텀업과의 차이 -->
+<section class="slide">
+  <div class="kicker">Positioning</div>
+  <h2>바텀업 샌드박스와의 차이 <span class="tag">같은 플랫폼, 다른 운영 등급</span></h2>
+  <div class="rule"></div>
+  <div class="body">
+    <table>
+      <thead><tr><th style="width:16%">구분</th><th>탑다운 (본 기획)</th><th>바텀업 (샌드박스)</th></tr></thead>
+      <tbody>
+        <tr><td class="h">과제 성격</td><td>사업 계획으로 확정된 공식 과제</td><td>현장 자율 제안 과제 (실험·검증)</td></tr>
+        <tr class="hl"><td class="h">가동</td><td><b>상시 가동</b> (SLO 관리)</td><td>시간제 가동 (셧다운/웨이크업)</td></tr>
+        <tr class="hl"><td class="h">배포</td><td><b>스테이징 → 운영 + 승인 게이트</b></td><td>dev 배포까지 (게이트 없음)</td></tr>
+        <tr class="hl"><td class="h">데이터</td><td><b>통제 하 실데이터 연동 허용</b></td><td>실데이터 금지 (마스킹·비식별만)</td></tr>
+        <tr><td class="h">수행 주체</td><td>지정된 개발·운영 조직</td><td>시티즌 개발자 (교육 이수자)</td></tr>
+        <tr><td class="h">종료</td><td>사업 판단에 따른 종료·이관</td><td>저활용 자동 선셋</td></tr>
+      </tbody>
+    </table>
+    <div class="callout" style="margin-top:18px"><b>핵심.</b> 상시 가용성이 필요해진 바텀업 과제는 그 자체가 격상 사유 — 운영급 환경은 격상을 통해서만 부여된다.</div>
+  </div>
+  <div class="foot">AWS 기반 탑다운(AIFAB) 과제 운영환경 기획안</div><div class="pagenum">3</div>
+</section>
+
+<!-- 4. 아키텍처 -->
+<section class="slide">
+  <div class="kicker">Architecture</div>
+  <h2>계정·환경 구조 — 공통 Landing Zone 위의 격리된 운영 환경</h2>
+  <div class="rule"></div>
+  <div class="body cols">
+    <div class="fig"><img src="media/fig1-aws-architecture.png" alt="AWS 전체 아키텍처"></div>
+    <ul class="bullets">
+      <li><b>Top-down OU에 과제별 계정 분리</b> — 계정 안에서 스테이징·운영 환경 분리</li>
+      <li>SCP 공통 가드레일(리전 제한·감사 보호·퍼블릭 노출 금지) 동일 적용, <b>시간제 가동만 미적용</b></li>
+      <li>인증은 Entra ID 사번 연동(SSO) 공용 — 권한세트 분리: <b>개발자는 스테이징만, 운영자는 모니터링만</b></li>
+      <li>ECS/Fargate <b>Multi-AZ 상시 태스크</b> + 오토스케일링, 인프라 변경은 Terraform PR로만</li>
+      <li>네트워크는 사내망 한정(인터넷 인바운드 차단), 바텀업과 계정·네트워크 모두 격리</li>
+    </ul>
+  </div>
+  <div class="foot">AWS 기반 탑다운(AIFAB) 과제 운영환경 기획안</div><div class="pagenum">4</div>
+</section>
+
+<!-- 5. 배포 체계 -->
+<section class="slide">
+  <div class="kicker">Delivery</div>
+  <h2>배포 체계 — 승인 게이트를 통과해야만 운영에 도달</h2>
+  <div class="rule"></div>
+  <div class="body">
+    <div class="fig" style="margin-bottom:16px"><img src="media/fig8-topdown-cicd.png" alt="탑다운 CI/CD"></div>
+    <div class="kpis" style="grid-template-columns: repeat(3, 1fr);">
+      <div class="kpi"><div class="v">게이트 통과 필수</div><div class="k">운영 배포는 AI Board·정보보호팀 승인 후에만 — 우회 경로 없음(불변 컨테이너)</div></div>
+      <div class="kpi"><div class="v">무중단 + 자동 롤백</div><div class="k">Blue/Green 배포, 오류율·응답시간 이상 시 즉시 롤백</div></div>
+      <div class="kpi"><div class="v">전수 이력</div><div class="k">모든 운영 반영이 Git·파이프라인 기록으로 감사 가능</div></div>
+    </div>
+  </div>
+  <div class="foot">AWS 기반 탑다운(AIFAB) 과제 운영환경 기획안</div><div class="pagenum">5</div>
+</section>
+
+<!-- 6. 실데이터 -->
+<section class="slide">
+  <div class="kicker">Data</div>
+  <h2>실데이터 취급 — 허용하되, 5단계로 통제</h2>
+  <div class="rule"></div>
+  <div class="body">
+    <table>
+      <thead><tr><th style="width:18%">단계</th><th>통제</th></tr></thead>
+      <tbody>
+        <tr><td class="h">반입 승인</td><td>데이터 등급 분류 → <b>정보보호팀 사전 심사·승인</b> (연동 범위·보존 기간 명시)</td></tr>
+        <tr><td class="h">연동 방식</td><td>원본 복사 최소화 — 가능하면 API·조회 연동, 복제 시 KMS 암호화</td></tr>
+        <tr><td class="h">접근 통제</td><td>과제 계정 격리 + IAM 최소권한 + 접근 이력 전수 기록(CloudTrail)</td></tr>
+        <tr><td class="h">상시 탐지</td><td>Macie가 등급 외 데이터·개인정보 유입 탐지 → 보드·정보보호팀 알림</td></tr>
+        <tr><td class="h">종료 시</td><td>데이터 파기 확인을 종료 체크리스트에 포함</td></tr>
+      </tbody>
+    </table>
+    <div class="callout" style="margin-top:18px"><b>바텀업과의 경계.</b> 실데이터는 탑다운에서만 — 바텀업은 마스킹·비식별 데이터만 허용되어, 격상 시 실데이터 연동 재설계와 보안 재심사를 반드시 거친다.</div>
+  </div>
+  <div class="foot">AWS 기반 탑다운(AIFAB) 과제 운영환경 기획안</div><div class="pagenum">6</div>
+</section>
+
+<!-- 7. 격상 유입 -->
+<section class="slide">
+  <div class="kicker">Promotion</div>
+  <h2>격상 유입 절차 — 재작성 없는 이관</h2>
+  <div class="rule"></div>
+  <div class="body">
+    <div class="steps" style="margin-bottom:18px">
+      <div class="step"><span class="n">1</span><b>코드 리뷰</b>품질·보안·표준 준수</div>
+      <div class="step"><span class="n">2</span><b>문서화</b>운영 절차서(Runbook)</div>
+      <div class="step"><span class="n">3</span><b>실데이터 재설계</b>보안 재심사</div>
+      <div class="step"><span class="n">4</span><b>운영 조직 지정</b>오너십·장애 대응</div>
+      <div class="step"><span class="n">5</span><b>재프로비저닝</b>운영급 표준 스택</div>
+      <div class="step"><span class="n">6</span><b>이관·검증</b>승인 게이트 통과</div>
+      <div class="step"><span class="n">7</span><b>원 환경 정리</b>샌드박스 자원 회수</div>
+    </div>
+    <div class="cols" style="flex:1; min-height:0">
+      <div class="fig"><img src="media/fig9-promotion-flow.png" alt="격상 유입 절차"></div>
+      <div>
+        <ul class="bullets">
+          <li>격상 확정은 <b>분기 보드 심의</b> — 성과 기준 충족 또는 상시 가용성 필요 시</li>
+          <li>샌드박스의 Git 형상·컨테이너 실행 구조가 그대로 유지되므로 <b>이관의 실체는 "재프로비저닝 + 재배포"</b></li>
+          <li>애플리케이션 <b>재작성이 발생하지 않는 것</b>이 격상 파이프라인의 핵심 설계 목표</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  <div class="foot">AWS 기반 탑다운(AIFAB) 과제 운영환경 기획안</div><div class="pagenum">7</div>
+</section>
+
+<!-- 8. 로드맵·비용 -->
+<section class="slide">
+  <div class="kicker">Plan &amp; Cost</div>
+  <h2>구축 로드맵 및 예상 비용</h2>
+  <div class="rule"></div>
+  <div class="body cols">
+    <div>
+      <table>
+        <thead><tr><th>단계</th><th>기간</th><th>핵심 작업</th></tr></thead>
+        <tbody>
+          <tr><td class="h">1. 공통 기반</td><td>M1~M2</td><td>Landing Zone (바텀업과 공동 구축)</td></tr>
+          <tr><td class="h">2. 탑다운 표준화</td><td>M2~M3</td><td>운영급 표준 모듈, 실데이터 반입 절차</td></tr>
+          <tr><td class="h">3. 배포 체계</td><td>M3~M4</td><td>승인 게이트, 무중단 배포·자동 롤백</td></tr>
+          <tr><td class="h">4. 격상 수용</td><td>M4~M6</td><td>이관 자동화, SLO·Runbook 표준</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div>
+      <div class="kpis" style="grid-template-columns: 1fr 1fr; margin:0 0 14px;">
+        <div class="kpi"><div class="v"><em>$1,400~1,600</em>/월</div><div class="k">과제 5개 · 상시 가동 · Multi-AZ 기준 (약 200~220만 원)</div></div>
+        <div class="kpi"><div class="v">20~30%↓</div><div class="k">정착 후 Savings Plans 적용 시 컴퓨팅 절감 여지</div></div>
+      </div>
+      <ul class="bullets">
+        <li>스테이징·개발 자원은 업무 시간 외 <b>자동 중지</b> (운영만 상시)</li>
+        <li>과제 종료 시 Terraform으로 <b>즉시 전체 회수</b></li>
+        <li>Direct Connect 회선료·인건비 제외한 개략 추정치</li>
+      </ul>
+    </div>
+  </div>
+  <div class="foot">AWS 기반 탑다운(AIFAB) 과제 운영환경 기획안</div><div class="pagenum">8</div>
+</section>
+
+<!-- 9. 기대효과·요청 -->
+<section class="slide">
+  <div class="kicker">Ask</div>
+  <h2>기대 효과 및 의사결정 요청 사항</h2>
+  <div class="rule"></div>
+  <div class="body cols">
+    <div>
+      <h2 style="font-size:19px; color:var(--navy); margin-bottom:14px">기대 효과</h2>
+      <ul class="bullets">
+        <li>공통 기반 재사용으로 <b>증분 구축 비용 최소화</b></li>
+        <li>승인 게이트·전수 이력으로 <b>운영 반영 품질과 감사 대응력</b> 확보</li>
+        <li>계정 격리로 실데이터 과제의 <b>보안 경계 명확화</b></li>
+        <li>격상 파이프라인으로 <b>현장 혁신의 전사 확산 경로 완성</b></li>
+        <li>SLO·Runbook 표준화로 과제 증가에도 <b>운영 부담 통제</b></li>
+      </ul>
+    </div>
+    <div>
+      <h2 style="font-size:19px; color:var(--navy); margin-bottom:14px">요청 사항</h2>
+      <ul class="bullets">
+        <li>기획안 방향 승인 및 <b>구축 예산(월 운영비 포함) 승인</b></li>
+        <li><b>정보보호팀 협의 착수</b> — 실데이터 반입 절차·배포 게이트 기준</li>
+        <li>격상 과제의 <b>정식 운영 조직 지정 원칙</b> 확정 (AI Board)</li>
+        <li>과제별 SLO 목표치(예: 가용성 99.5%) 승인</li>
+      </ul>
+    </div>
+  </div>
+  <div class="foot">AWS 기반 탑다운(AIFAB) 과제 운영환경 기획안</div><div class="pagenum">9</div>
+</section>
+
+</body>
+</html>
