@@ -75,8 +75,8 @@ AWS Organization으로 Shared Services(공통), Top-down(공식 과제), Bottom-
 | **영역** | **AWS 서비스** | **역할** |
 |:---|:---|:---|
 | 계정 거버넌스 | AWS Organizations (SCP) | 탑다운/바텀업 계정 분리, 금지 행위의 조직 차원 차단 (상세: 3.2) |
-| 인증·권한 | IAM Identity Center | 사내 SSO 연동, 권한세트 기반 최소권한 부여 |
-| 신청·승인 자동화 | API Gateway, Lambda, Step Functions | 신청 접수, 심사 워크플로, 승인·프로비저닝 오케스트레이션 |
+| 인증·권한 | IAM Identity Center | 사내 SSO 연동, 권한세트 기반 최소권한 부여 (상세: 3.3) |
+| 신청·승인 자동화 | API Gateway, Lambda, Step Functions | 신청 접수, 심사 워크플로, 승인·프로비저닝 오케스트레이션 (상세: 3.4) |
 | AI 심사·리포트 | Amazon Bedrock(Claude), Knowledge Bases | 적합성 사전 심사, 주간 리포트 자동 생성(RAG 기반) |
 | IaC | Terraform (CloudFormation 병용 가능) | 과제별 표준 스택 자동 생성·회수 |
 | 실행 환경 | ECS/Fargate, EC2, Lambda | 과제 앱 실행, 개발 서버, 경량 처리 |
@@ -115,6 +115,62 @@ Root (관리 계정: 조직·결제 관리 전용, 워크로드 배치 금지)
 
 - 가드레일 3의 예외는 `aws:PrincipalArn` 조건으로 Shared Services의 Terraform 프로비저닝 역할만 허용한다. 즉 네트워크 변경은 IaC 코드 리뷰(PR)를 거친 자동화 경로로만 가능하다.
 - SCP는 무비용이며, 목록의 추가·변경은 AI Board 정책 심의를 거쳐 AI 인프라팀이 반영한다.
+
+### 3.3 인증·권한 세팅 (Identity Center · Entra ID 연동)
+
+인증·권한의 원칙은 **"AWS에 별도 자격증명을 만들지 않는다"**이다. 사내 MS Entra ID를 신원의 단일 원천(Single Source of Truth)으로 삼아 사번 기반으로 자동 연동하고, AWS 접근은 전부 임시 자격증명(STS)으로만 이뤄진다. 입사·퇴사·부서이동이 사내 인사 체계에 반영되면 AWS 접근 권한도 자동으로 따라간다.
+
+#### 3.3.1 연동 구조 (SAML 인증 + SCIM 프로비저닝)
+
+```
+[MS Entra ID]                                 [AWS IAM Identity Center]
+     │
+     ├─ ① SAML 2.0 (인증) ─────────────────→  로그인 시 신원 확인
+     │     사내 MFA·조건부 액세스 정책 그대로 적용
+     │
+     └─ ② SCIM (프로비저닝) ───────────────→  사용자·그룹 자동 동기화
+           사번(employeeId) 속성 매핑,             (생성·수정·비활성화)
+           입사·퇴사·부서이동 자동 반영
+```
+
+- **① SAML(인증)**: 사용자는 AWS 액세스 포털 접속 시 Entra ID 로그인으로 리다이렉트된다. 사내 MFA·조건부 액세스(사내망 한정 로그인 등)가 그대로 적용되고, AWS에는 별도 비밀번호가 존재하지 않는다.
+- **② SCIM(프로비저닝)**: Entra ID의 사용자·그룹이 Identity Center로 자동 동기화된다. 사번(`employeeId`)을 속성 매핑으로 전달하며, Entra ID 앱 갤러리의 표준 앱(AWS IAM Identity Center)으로 설정한다.
+- 권한은 권한세트(Permission Set)로 표준화하고, "그룹 × 계정 × 권한세트" 할당으로 부여한다.
+
+| **권한세트** | **대상** | **범위** |
+|:---|:---|:---|
+| SandboxDeveloper | 과제 수행자 | 담당 과제 계정 내 광범위 개발 권한 (네트워크·조직 변경은 SCP가 차단) |
+| SandboxReadOnly | AI Board·정보보호팀 | 샌드박스 전 계정 조회 (심사·점검용) |
+| PlatformAdmin | AI 인프라팀 | Shared Services·Landing Zone 운영 |
+
+#### 3.3.2 사번 기반 권한 부여 흐름 (승인 → 접근)
+
+1. 보드 승인 완료 시 Step Functions 워크플로가 후속 자동화를 실행
+2. Lambda가 Microsoft Graph API로 신청자 사번을 Entra ID 과제 그룹(예: `AWS-SBX-{과제ID}-Dev`)에 추가
+3. SCIM이 그룹·멤버를 Identity Center로 동기화
+4. Terraform이 해당 그룹을 "과제 계정 × SandboxDeveloper"에 할당
+5. 사용자는 액세스 포털 → Entra 로그인(MFA) → 담당 과제 계정만 표시 → 임시 자격증명으로 콘솔/CLI 사용
+
+퇴사·부서이동 시에는 역방향이 자동 동작한다: Entra 계정 비활성화 → SCIM 동기화 → 모든 AWS 접근 즉시 차단. 이 이벤트를 Orphan 과제(2.4) 탐지 트리거로도 활용한다.
+
+#### 3.3.3 운영 원칙·확인 사항
+
+- 권한 변경은 Entra ID 그룹 멤버십으로만 수행한다. SCIM 동기화 대상은 Identity Center 쪽에서 수정할 수 없으며, 수정해도 다음 동기화에서 덮어써진다(원천은 항상 Entra)
+- SCIM 동기화는 약 40분 주기이므로, 승인 직후 온디맨드 프로비저닝을 트리거해 "승인 후 30분 내 자원 사용" 목표(9.1)를 보장
+- SCIM은 중첩 그룹을 지원하지 않으므로 과제 그룹에 사용자를 직접 배치하는 평평한 구조로 설계
+- Entra ID 자동 프로비저닝에는 P1 이상 라이선스가 필요(사내 M365 라이선스 포함 여부 확인)
+- Identity Center는 조직당 1개(서울 리전)로 활성화하고, 관리 위임(delegated administration)으로 Shared Services 계정에서 운영(관리 계정 최소화 원칙 3.2.1과 일치)
+
+### 3.4 신청·승인 자동화 개발 계획 (API Gateway · Lambda · Step Functions)
+
+신청·승인 자동화 계층은 현재 구체적인 설계가 확정되지 않은 영역으로, 기성 서비스의 설정만으로 구성할 수 없는 **신규 개발 대상**이다. 신청 포털(UI·API), 접수·심사 워크플로(Step Functions), AI 트리아지(사전심사)·자동화 에이전트가 개발 범위에 해당하며, 서비스 구성(API Gateway·Lambda·Step Functions)은 방향으로만 정한 상태다.
+
+| **구분** | **내용** |
+|:---|:---|
+| 개발 주체 | AI 인프라팀 — 트리아지·자동화 에이전트를 포함한 신청·승인 시스템의 설계·개발·운영 담당 |
+| 검토 주체 | AI Board — 요구사항·심사 기준·정책 관점의 검토 및 의견 제시 |
+| 현재 상태 | 상세 설계 미확정. 기능 요건은 6장(AI Agent 아키텍처)과 9장(운영 프로세스)을 기준으로 함 |
+| 확정 시점 | 로드맵 2단계(신청 자동화) 착수 전, AI 인프라팀이 상세 설계·개발 기획을 수립하고 AI Board 검토를 거쳐 확정 |
 
 ## 4. 네트워크(VPC/Subnet) 구성도
 
