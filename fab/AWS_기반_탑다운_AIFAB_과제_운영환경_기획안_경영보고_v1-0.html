@@ -129,6 +129,7 @@
     <ul class="bullets">
       <li><b>Top-down OU에 과제별 계정 분리</b> — 계정 안에서 스테이징·운영 환경 분리</li>
       <li>SCP 공통 가드레일(리전 제한·감사 보호·퍼블릭 노출 금지) 동일 적용, <b>시간제 가동만 미적용</b></li>
+      <li><b>실데이터 보호 정책 강화</b> — 암호화 키 삭제·탐지 해제·감사 중단 원천 차단(조직 정책으로 관리자 포함 불가)</li>
       <li>인증은 Entra ID 사번 연동(SSO) 공용 — 권한세트 분리: <b>개발자는 스테이징만, 운영자는 모니터링만</b></li>
       <li>ECS/Fargate <b>Multi-AZ 상시 태스크</b> + 오토스케일링, 인프라 변경은 Terraform PR로만</li>
       <li>네트워크는 사내망 한정(인터넷 인바운드 차단), 바텀업과 계정·네트워크 모두 격리</li>
@@ -146,7 +147,7 @@
     <div class="fig" style="margin-bottom:16px"><img src="media/fig8-topdown-cicd.png" alt="탑다운 CI/CD"></div>
     <div class="kpis" style="grid-template-columns: repeat(3, 1fr);">
       <div class="kpi"><div class="v">게이트 통과 필수</div><div class="k">운영 배포는 AI Board·정보보호팀 승인 후에만 — 우회 경로 없음(불변 컨테이너)</div></div>
-      <div class="kpi"><div class="v">무중단 + 자동 롤백</div><div class="k">Blue/Green 배포, 오류율·응답시간 이상 시 즉시 롤백</div></div>
+      <div class="kpi"><div class="v">무중단 + 자동 롤백</div><div class="k">Blue/Green 배포 — 이상 징후 시 5분 모니터링 후 자동 롤백. 장애 복구 목표: 데이터 손실 최대 1시간, 서비스 복구 15분(자동 이중화)</div></div>
       <div class="kpi"><div class="v">전수 이력</div><div class="k">모든 운영 반영이 Git·파이프라인 기록으로 감사 가능</div></div>
     </div>
   </div>
@@ -162,7 +163,7 @@
     <table>
       <thead><tr><th style="width:18%">단계</th><th>통제</th></tr></thead>
       <tbody>
-        <tr><td class="h">반입 승인</td><td>데이터 등급 분류 → <b>정보보호팀 사전 심사·승인</b> (연동 범위·보존 기간 명시)</td></tr>
+        <tr><td class="h">반입 승인</td><td>데이터 등급 분류 기준(공개/내부/기밀 등)에 따른 반입 심사 → <b>정보보호팀 사전 심사·승인</b> (연동 범위·보존 기간 명시)</td></tr>
         <tr><td class="h">연동 방식</td><td>원본 복사 최소화 — 가능하면 API·조회 연동, 복제 시 KMS 암호화</td></tr>
         <tr><td class="h">접근 통제</td><td>과제 계정 격리 + IAM 최소권한 + 접근 이력 전수 기록(CloudTrail)</td></tr>
         <tr><td class="h">상시 탐지</td><td>Macie가 등급 외 데이터·개인정보 유입 탐지 → 보드·정보보호팀 알림</td></tr>
@@ -228,6 +229,7 @@
       <ul class="bullets">
         <li>스테이징·개발 자원은 업무 시간 외 <b>자동 중지</b> (운영만 상시)</li>
         <li>과제 종료 시 Terraform으로 <b>즉시 전체 회수</b></li>
+        <li>표준 태그 의무화 + 계정별 예산 경보로 <b>과제 단위 비용 통제</b></li>
         <li>Direct Connect 회선료·인건비 제외한 개략 추정치</li>
       </ul>
     </div>

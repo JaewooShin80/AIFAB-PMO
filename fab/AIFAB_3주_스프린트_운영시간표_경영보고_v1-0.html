@@ -115,7 +115,7 @@
       <tbody>
         <tr><td class="h">W1 (9/1~4)</td><td>계획 확정, 전 팀 스테이징 배포</td><td>착수 게이트(Gate 0), 미달 팀 즉시 지원 투입</td></tr>
         <tr><td class="h">W2 (9/7~11)</td><td>핵심 기능 완성</td><td>중간 게이트(Gate 1): 계속/범위 축소/조기 중단 — 가망 없는 과제에 자원 낭비 방지</td></tr>
-        <tr class="hl"><td class="h">W3 (9/14~18)</td><td><b>운영 배포 + 데모데이</b></td><td>배포 게이트(Gate 2): 자동 보안 검사(치명 취약점 0건) + 위험 등급별 리뷰 + AI Board·정보보호팀 승인</td></tr>
+        <tr class="hl"><td class="h">W3 (9/14~18)</td><td><b>운영 배포 + 데모데이</b></td><td>배포 게이트(Gate 2): 자동 보안 검사(코드·컨테이너 치명 취약점 0건) + 위험 등급별 리뷰 + AI Board·정보보호팀 승인</td></tr>
       </tbody>
     </table>
   </div>
@@ -141,7 +141,7 @@
       <div class="kpi"><div class="v">0건</div><div class="k">치명(Critical/High) 취약점 — 배포 통과 기준</div></div>
       <div class="kpi"><div class="v">3-lane</div><div class="k">위험 등급 분류 (Green/Yellow/Red)</div></div>
       <div class="kpi"><div class="v">3인 승인</div><div class="k">고위험(Red) 코드 — 리뷰어+시니어+보안</div></div>
-      <div class="kpi"><div class="v">자동 롤백</div><div class="k">Blue/Green 무중단 배포 실패 시</div></div>
+      <div class="kpi"><div class="v">자동 롤백</div><div class="k">Blue/Green 무중단 배포 — 이상 징후 감지 시 5분 내 자동 롤백</div></div>
     </div>
   </div>
   <div class="foot">AIFAB 3주 스프린트 운영 계획 — 경영 보고</div><div class="pagenum">4</div>
@@ -158,6 +158,7 @@
       <li><b>정기 기술상담 주 2회(신청제)</b> — 긴급 블로커는 4시간 내 즉시 대응, 전용 질문 채널 운영</li>
       <li><b>팀 내 챔피언 지정</b> — 도구 사용 정착 촉진 (글로벌 조사: 자연 방치 시 10주 후 지속 사용 10% 미만)</li>
       <li><b>성공 기준은 킥오프 전(8/28) 동결</b> — 사후 기준 변경으로 "항상 성공하는 파일럿"이 되는 것을 차단</li>
+      <li><b>플랫폼 장애 온콜</b>(AI 인프라팀 전담 로테이션) — 심각 장애 초동 30분 이내, 개발 질문(기술상담)과 분리 운영</li>
     </ul>
     <div class="kpis">
       <div class="kpi"><div class="v">배포 완성</div><div class="k">팀별 운영 배포 — 핵심 성공 지표</div></div>

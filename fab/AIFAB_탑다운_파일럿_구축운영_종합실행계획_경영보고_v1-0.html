@@ -123,7 +123,7 @@
     <table>
       <thead><tr><th style="width:15%">주차</th><th style="width:34%">Track A 시스템 구축</th><th style="width:34%">Track B 프로그램 셋업</th><th>보고·의사결정</th></tr></thead>
       <tbody>
-        <tr><td class="h">7월 3~5주</td><td>Landing Zone 점검, 골든 패스·보안 파이프라인 구축</td><td>예외 규정 승인(7/24), KPI 산식, 모집 공고</td><td><b>7/17 착수 보고</b></td></tr>
+        <tr><td class="h">7월 3~5주</td><td>Landing Zone 점검, 골든 패스·보안 파이프라인 구축 / <b>장기 리드타임 항목 선행 신청</b>(클라우드 한도·AI 모델 승인·사내망 확인)</td><td>예외 규정 승인(7/24), KPI 산식, 모집 공고</td><td><b>7/17 착수 보고</b></td></tr>
         <tr><td class="h">8월 1~2주</td><td>템플릿 완성, 통합 시험</td><td>접수 마감(8/7) → 2단계 심사 → <b>선발 확정(8/14)</b></td><td><b>8/7 중간 점검 보고</b></td></tr>
         <tr class="hl"><td class="h">8월 3~4주</td><td>계정 발급, <b>통합 드라이런·완비 선언</b></td><td>온보딩 2주, <b>KPI 동결 서명</b></td><td><b>8/28 준비 완료 보고 · Go/No-Go</b></td></tr>
         <tr class="hl"><td class="h">9월 1~3주</td><td>운영 지원(핫라인), Gate 2 검사·배포</td><td><b>9/1 킥오프</b> → Gate 1(9/11) → 배포(9/17)</td><td><b>9/18 데모데이</b> (경영진 참석)</td></tr>
@@ -166,11 +166,12 @@
       <div class="panel">
         <h3>Track A — 시스템 구축 (AI 인프라팀)</h3>
         <ul class="check">
-          <li>골든 패스 6대 템플릿 완비 (ECS·Lambda·RDS·비용태그·관측성·Secrets)</li>
+          <li>골든 패스 7대 템플릿 완비 (ECS·Lambda·RDS·비용태그·관측성·Secrets·AI 연동)</li>
           <li>폼 입력 → 레포 자동 생성 → 스테이징 배포 <b>1시간 이내</b> (비개발자 드라이런 통과)</li>
           <li>SAST·시크릿 검출 파이프라인 내장 (치명 취약점 0건 게이트 동작 확인)</li>
           <li>위험 등급(3-lane) 분류 기준·리뷰 절차 확정</li>
           <li>참여자 전원 계정·권한 발급, 무중단 배포·자동 롤백 검증</li>
+          <li>네트워크 연결성·접속 권한·AI 호출 경로 실측 검증 (6개 기술 항목)</li>
         </ul>
       </div>
       <div class="panel">
@@ -206,7 +207,7 @@
       </tbody>
     </table>
     <div class="kpis" style="margin-top:20px">
-      <div class="kpi"><div class="v">매주 금</div><div class="k">주간 진척 보고 — AI Board → 스폰서·경영진 (1페이지)</div></div>
+      <div class="kpi"><div class="v">매주 금</div><div class="k">주간 진척 보고 — AI Board → 스폰서·경영진 (1페이지) · 보안 현황(위협 탐지 건수) 포함. 심각 이슈는 4시간 내 정보보호팀 통보</div></div>
       <div class="kpi"><div class="v">매일</div><div class="k">스프린트 데일리(9월) — 챔피언 → AI Board</div></div>
       <div class="kpi"><div class="v">9/24</div><div class="k">AI Board 심의 — 스코어카드 기반 출구 결정</div></div>
       <div class="kpi"><div class="v">5회</div><div class="k">마일스톤 경영 보고 (착수→중간→준비→데모→최종)</div></div>
