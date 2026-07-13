@@ -4,7 +4,11 @@ from diagrams.aws.network import APIGateway
 from diagrams.aws.compute import Lambda
 from diagrams.aws.integration import StepFunctions, Eventbridge, SNS
 from diagrams.aws.engagement import SES
-from diagrams.aws.analytics import Athena, ElasticsearchService
+from diagrams.aws.analytics import Athena
+try:
+    from diagrams.aws.analytics import AmazonOpensearchService as OpenSearchNode
+except ImportError:
+    from diagrams.aws.analytics import ElasticsearchService as OpenSearchNode
 from diagrams.aws.storage import S3
 from diagrams.aws.database import Dynamodb
 from diagrams.onprem.iac import Terraform
@@ -48,7 +52,7 @@ with Diagram(
 
         with Cluster("Knowledge Base (RAG)"):
             kb = S3("정책·과제 카탈로그\n사내 AI 도구 카탈로그·심사 사례")
-            oss = ElasticsearchService("OpenSearch\n(벡터 검색)")
+            oss = OpenSearchNode("OpenSearch\n(벡터 검색)")
             kb >> oss
 
         portal >> apigw >> intake >> wf >> agent

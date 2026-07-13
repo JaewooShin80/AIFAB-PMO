@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AIFAB 웹 IDE 개발환경 구축 방안 — 경영 보고</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  :root {
+    --ink: #14181f; --muted: #5b6472; --accent: #ea002c; --accent-soft: #fdeef1;
+    --line: #e3e7ee; --bg: #eef1f5; --card: #f8fafc; --navy: #1f2a44;
+  }
+  html { scroll-snap-type: y mandatory; }
+  body { background: var(--bg); font-family: "Pretendard", "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans KR", sans-serif; color: var(--ink); }
+  .slide {
+    width: min(1280px, 100vw); aspect-ratio: 16 / 9; margin: 24px auto; background: #fff;
+    border: 1px solid var(--line); box-shadow: 0 8px 28px rgba(20,24,31,.08);
+    padding: 3.2% 3.8%; display: flex; flex-direction: column; scroll-snap-align: center;
+    position: relative; overflow: hidden;
+  }
+  .kicker { font-size: 13px; font-weight: 700; letter-spacing: .14em; color: var(--accent); text-transform: uppercase; margin-bottom: 8px; }
+  h1 { font-size: 44px; line-height: 1.25; letter-spacing: -.01em; }
+  h2 { font-size: 30px; letter-spacing: -.01em; margin-bottom: 6px; }
+  .sub { color: var(--muted); font-size: 16px; margin-top: 14px; line-height: 1.6; }
+  .pagenum { position: absolute; bottom: 18px; right: 28px; font-size: 12px; color: var(--muted); }
+  .foot { position: absolute; bottom: 18px; left: 28px; font-size: 12px; color: var(--muted); }
+  .rule { height: 3px; width: 56px; background: var(--accent); border-radius: 2px; margin: 14px 0 22px; }
+  .body { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+  .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 26px; flex: 1; min-height: 0; }
+  .bullets { list-style: none; display: flex; flex-direction: column; gap: 14px; }
+  .bullets li { padding-left: 18px; position: relative; font-size: 17px; line-height: 1.55; }
+  .bullets li::before { content: ""; position: absolute; left: 0; top: .62em; width: 7px; height: 7px; border-radius: 2px; background: var(--accent); }
+  .bullets b { color: var(--navy); }
+  .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-top: auto; }
+  .kpi { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 16px 18px; }
+  .kpi .v { font-size: 26px; font-weight: 800; color: var(--navy); letter-spacing: -.01em; }
+  .kpi .v em { font-style: normal; color: var(--accent); }
+  .kpi .k { font-size: 12.5px; color: var(--muted); margin-top: 5px; line-height: 1.4; }
+  table { width: 100%; border-collapse: collapse; font-size: 15.5px; }
+  th, td { padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--line); line-height: 1.5; vertical-align: top; }
+  thead th { background: var(--navy); color: #fff; font-weight: 600; font-size: 14px; }
+  td.h { font-weight: 700; color: var(--navy); white-space: nowrap; }
+  .hl { background: var(--accent-soft); }
+  .callout { border-left: 4px solid var(--accent); background: var(--accent-soft); padding: 14px 18px; border-radius: 0 8px 8px 0; font-size: 16.5px; line-height: 1.55; }
+  .callout b { color: var(--accent); }
+  .steps { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+  .step { background: var(--card); border: 1px solid var(--line); border-radius: 9px; padding: 12px 10px; font-size: 13px; line-height: 1.45; }
+  .step .n { display: inline-block; width: 20px; height: 20px; border-radius: 50%; background: var(--navy); color: #fff; font-size: 11.5px; font-weight: 700; text-align: center; line-height: 20px; margin-bottom: 7px; }
+  .step b { display: block; font-size: 13.5px; color: var(--navy); }
+  .step.now { border-color: var(--accent); background: var(--accent-soft); }
+  .step.now .n { background: var(--accent); }
+  .check { list-style: none; display: flex; flex-direction: column; gap: 9px; }
+  .check li { padding-left: 26px; position: relative; font-size: 14.5px; line-height: 1.5; }
+  .check li::before { content: "✓"; position: absolute; left: 0; top: 0; width: 18px; height: 18px; border-radius: 5px; background: var(--accent-soft); color: var(--accent); font-size: 12px; font-weight: 800; text-align: center; line-height: 18px; }
+  .panel { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 18px 20px; }
+  .panel h3 { font-size: 16.5px; color: var(--navy); margin-bottom: 12px; }
+  .cover { justify-content: center; background: linear-gradient(135deg, #1f2a44 0%, #131a2c 100%); color: #fff; }
+  .cover .kicker { color: #ff7d92; }
+  .cover h1 { color: #fff; font-size: 46px; }
+  .cover .meta { margin-top: 40px; font-size: 15px; color: #b8c0d0; line-height: 2; }
+  .cover .rule { width: 72px; }
+  .tag { display: inline-block; font-size: 12.5px; font-weight: 700; background: var(--accent-soft); color: var(--accent); border-radius: 999px; padding: 4px 12px; margin-left: 10px; vertical-align: middle; }
+  @media print {
+    body { background: #fff; }
+    .slide { width: 100%; height: 100vh; aspect-ratio: auto; margin: 0; border: none; box-shadow: none; page-break-after: always; }
+    @page { size: A4 landscape; margin: 0; }
+  }
+</style>
+</head>
+<body>
+
+<!-- 1. 표지 -->
+<section class="slide cover">
+  <div class="kicker">AIFAB · Citizen Developer Workspace</div>
+  <h1>웹 IDE 개발환경 구축 방안<br>브라우저 로그인 한 번으로 AI 개발 시작</h1>
+  <div class="rule"></div>
+  <div class="meta">
+    SSO 로그인 → 브라우저 VS Code → Claude Code 즉시 사용 · 설치 제로 · API 키 제로 · 사내망 한정<br>
+    v1.0 · 2026. 07. 13 · 작성 신재우 · 사내 검토용 (상세: Terraform 세팅 가이드 v1-0)
+  </div>
+</section>
+
+<!-- 2. 개요 -->
+<section class="slide">
+  <div class="kicker">Overview</div>
+  <h2>무엇을 만드나 <span class="tag">시티즌 개발자용 표준 개발환경</span></h2>
+  <div class="rule"></div>
+  <div class="body">
+    <div class="callout" style="margin-bottom:20px"><b>목표.</b> 과제 승인 즉시 팀별 개발환경이 자동 생성되고, 시티즌 개발자는 브라우저에서 SSO 로그인만 하면 Claude 하네스가 적용된 VS Code 환경에서 바로 개발을 시작한다.</div>
+    <div class="steps" style="margin-bottom:20px">
+      <div class="step"><span class="n">1</span><b>과제 승인</b>승인 워크플로가 Terraform으로 팀 워크스페이스 자동 생성</div>
+      <div class="step"><span class="n">2</span><b>SSO 로그인</b>사내 계정(Entra ID 연동)으로 브라우저 접속 — 설치·신청 없음</div>
+      <div class="step now"><span class="n">3</span><b>IDE 즉시 시작</b>VS Code 웹 환경 + Claude Code·AIFAB 하네스 선탑재 상태</div>
+      <div class="step"><span class="n">4</span><b>키리스 AI 연동</b>Bedrock 경유 — API 키 배포 없이 권한(IAM)으로 자동 인증</div>
+    </div>
+    <div class="kpis">
+      <div class="kpi"><div class="v"><em>0</em>건</div><div class="k">사용자 설치·API 키 배포 — 브라우저만으로 개발</div></div>
+      <div class="kpi"><div class="v">SSO 1회</div><div class="k">로그인만으로 하네스 적용 환경 진입</div></div>
+      <div class="kpi"><div class="v">사내망</div><div class="k">인터넷 인바운드 차단, VPC 내부 통신 한정</div></div>
+      <div class="kpi"><div class="v">자동 종료</div><div class="k">유휴 시 자동 셧다운 — 시간제 가동 정책 연동</div></div>
+    </div>
+  </div>
+  <div class="foot">AIFAB 웹 IDE 개발환경 구축 방안 — 경영 보고</div><div class="pagenum">2</div>
+</section>
+
+<!-- 3. 대안 비교 -->
+<section class="slide">
+  <div class="kicker">Options</div>
+  <h2>구현 대안 비교 <span class="tag">1안 권고</span></h2>
+  <div class="rule"></div>
+  <div class="body">
+    <table>
+      <thead><tr><th style="width:20%">기준</th><th style="width:40%">1안 — SageMaker Code Editor (AWS 관리형)</th><th>2안 — Coder (자체 운영 플랫폼)</th></tr></thead>
+      <tbody>
+        <tr><td class="h">진입 경험</td><td><b>SSO → 브라우저 IDE 즉시</b> (최단)</td><td>SSO → 워크스페이스 기동 → IDE</td></tr>
+        <tr class="hl"><td class="h">플랫폼 운영 부담</td><td><b>없음</b> — 패치·업그레이드 AWS 수행</td><td>서버·DB·이미지 유지보수 상시 (월 0.5인 공수)</td></tr>
+        <tr><td class="h">커스터마이징</td><td>이미지 범위로 제한</td><td><b>전면 통제</b> (Terraform 네이티브)</td></tr>
+        <tr><td class="h">비용 (5~10팀·유휴종료)</td><td>동급 — 5팀에선 소폭 우위 (고정비 없음)</td><td>동급</td></tr>
+        <tr><td class="h">확대·상시화 시</td><td>관리형 마크업 누적</td><td><b>비용 우위</b> (20팀+ 규모)</td></tr>
+      </tbody>
+    </table>
+    <div class="cols" style="margin-top:18px; flex:none">
+      <div class="panel">
+        <h3>검토 제외 대안</h3>
+        <ul class="check">
+          <li>CodeCatalyst — 2025.11부로 신규 고객 수용 중단</li>
+          <li>Cloud9 — 단종 (신규 사용 불가)</li>
+          <li>Claude 팀플랜 직결 — 데이터가 AWS 외부로 전송, 사내망 원칙과 상충 (별도 협의 사안)</li>
+        </ul>
+      </div>
+      <div class="callout" style="display:flex; align-items:center"><span><b>권고.</b> 파일럿(5~10팀)은 1안으로 시작 — 운영 인력을 골든 패스 품질에 집중. 하네스는 이미지로 이식 가능해 확대 시 2안 전환 비용이 제한적.</span></div>
+    </div>
+  </div>
+  <div class="foot">AIFAB 웹 IDE 개발환경 구축 방안 — 경영 보고</div><div class="pagenum">3</div>
+</section>
+
+<!-- 4. 비용 -->
+<section class="slide">
+  <div class="kicker">Cost</div>
+  <h2>예상 비용 <span class="tag">서울 리전 · 개략 추정 · USD/월</span></h2>
+  <div class="rule"></div>
+  <div class="body">
+    <table>
+      <thead><tr><th style="width:34%">구분</th><th style="width:16%">1안 5팀</th><th style="width:16%">1안 10팀</th><th style="width:16%">2안 5팀</th><th>2안 10팀</th></tr></thead>
+      <tbody>
+        <tr class="hl"><td class="h">인프라 — 업무시간 + 유휴 자동 종료</td><td><b>약 350</b></td><td><b>약 650</b></td><td>약 405</td><td>약 660</td></tr>
+        <tr><td class="h">인프라 — 상시 가동 시</td><td>약 1,010</td><td>약 1,980</td><td>약 955</td><td>약 1,760</td></tr>
+        <tr><td class="h">Claude Code 토큰 (Bedrock 종량제)</td><td colspan="4">3주 스프린트당 약 900(5팀)~1,800(10팀) — 개발자 평균 $6/일 기준, 미사용 시 0</td></tr>
+      </tbody>
+    </table>
+    <div class="callout" style="margin-top:18px"><b>파일럿 월 총액 약 1,300~2,500 USD</b> (10팀·유휴종료 기준, 인프라+토큰 합산). 종량제 구조라 사용 강도가 검증되지 않은 파일럿 단계에 저위험 — 정액제(팀플랜 시트) 전환은 사용량 실측 후 재검토.</div>
+    <div class="kpis" style="margin-top:18px">
+      <div class="kpi"><div class="v">$10~30</div><div class="k">일반 대시보드 1건 개발 시 토큰 비용</div></div>
+      <div class="kpi"><div class="v">90%↓</div><div class="k">프롬프트 캐싱 자동 적용 — 실효 단가 절감</div></div>
+      <div class="kpi"><div class="v"><em>$0</em></div><div class="k">미사용 시 토큰 비용 — 종량제</div></div>
+      <div class="kpi"><div class="v">상한 알람</div><div class="k">과제별 비용 태그 + 예산 초과 자동 경보</div></div>
+    </div>
+  </div>
+  <div class="foot">AIFAB 웹 IDE 개발환경 구축 방안 — 경영 보고</div><div class="pagenum">4</div>
+</section>
+
+<!-- 5. 권고·다음 단계 -->
+<section class="slide">
+  <div class="kicker">Decision &amp; Next Steps</div>
+  <h2>권고 및 다음 단계 <span class="tag">8월 골든 패스 기간 내 완료</span></h2>
+  <div class="rule"></div>
+  <div class="body">
+    <div class="cols">
+      <div>
+        <div class="panel" style="height:100%">
+          <h3>권고 — 1안 SageMaker Code Editor 채택</h3>
+          <ul class="bullets" style="gap:12px">
+            <li><b>운영 부담 제로</b> — 파일럿 기간 AI 인프라팀 리소스를 골든 패스·하네스 품질에 집중</li>
+            <li><b>비용 동급 이하</b> — 유휴 종료 기준 5팀 월 약 350 USD, 고정비 없음</li>
+            <li><b>전환 여지 확보</b> — 확대 단계(20팀+·상시화)에서 2안 재평가, 하네스 이식으로 전환 비용 제한적</li>
+          </ul>
+        </div>
+      </div>
+      <div>
+        <div class="panel" style="height:100%">
+          <h3>다음 단계 (트랙 A 편입, ~8/28)</h3>
+          <ul class="check">
+            <li>VPC 전용 모드 네트워킹 선행 검증 — 구축 최대 난관, 8월 초 우선 착수</li>
+            <li>하네스 탑재 커스텀 이미지 개발·검증 (AWS 베이스 이미지 활용)</li>
+            <li>Bedrock 승인 모델 화이트리스트 + 과제별 예산 알람 설정</li>
+            <li>정보보호팀 협의 — 데이터 경로·아웃바운드 정책 확인</li>
+            <li>8/28 Readiness Review에 웹 IDE 완비 항목 포함 — 드라이런으로 검증</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <div class="callout" style="margin-top:18px"><b>의사결정 요청.</b> ① 1안 채택 승인 ② 파일럿 예산(월 약 1,300~2,500 USD) 승인 ③ 정보보호팀 협의 착수 승인.</div>
+  </div>
+  <div class="foot">AIFAB 웹 IDE 개발환경 구축 방안 — 경영 보고</div><div class="pagenum">5</div>
+</section>
+
+</body>
+</html>

@@ -42,10 +42,10 @@ with Diagram(
 
     with Cluster("Bottom-up Sandbox VPC  (예: 10.20.0.0/16, 2 AZ)"):
         with Cluster("Public Subnet"):
-            alb = ElbApplicationLoadBalancer("내부 ALB\n(사내망 전용)")
             nat = NATGateway("NAT Gateway\n(허용 목록 egress)")
 
         with Cluster("Private Subnet - App"):
+            alb = ElbApplicationLoadBalancer("내부 ALB\n(internal · 사내망 전용)")
             app = Fargate("ECS/Fargate\n과제 앱")
             fn = Lambda("Lambda")
             dev = EC2("개발 서버")
@@ -53,7 +53,7 @@ with Diagram(
         with Cluster("Private Subnet - Data"):
             rds = RDS("RDS\n(KMS 암호화)")
 
-        vpce = Endpoint("VPC Endpoints\n(S3·ECR·Bedrock·Logs)")
+        vpce = Endpoint("VPC Endpoints (필수)\nSageMaker·ECR·Bedrock\nSTS·Logs·S3 등 9종+")
 
         alb >> app
         app >> Edge(label="화이트리스트 통신", style="dashed") >> nat

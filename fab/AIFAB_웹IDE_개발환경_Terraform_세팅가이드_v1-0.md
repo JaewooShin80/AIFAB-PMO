@@ -50,7 +50,7 @@
 ```
 
 - 사용자는 EC2·인스턴스를 보지 않는다. AWS가 기반 인스턴스 패치·업그레이드 수행
-- Space 단위 격리: **팀당 공유 Space 1개**(협업) 또는 인당 개인 Space — 파일럿은 팀당 1개 기준
+- Space 단위 격리: **Code Editor는 개인(Private) Space 전용** — 공유 Space는 JupyterLab만 지원하므로 인당 Space 1개를 생성하고, 팀 협업은 Git 공유 레포로 수행
 - `VpcOnly` 모드로 사내망 요건(R5) 충족 — Studio 트래픽이 과제 VPC 내부로만 흐름
 
 ### 2.2 Terraform 구성 골격
@@ -73,8 +73,8 @@ resource "aws_sagemaker_domain" "aifab" {
         sagemaker_image_arn = aws_sagemaker_image.aifab_harness.arn  # 커스텀 이미지(권장)
       }
       lifecycle_config_arns = [aws_sagemaker_studio_lifecycle_config.harness.arn]
-      app_lifecycle_management {
-        idle_settings {                            # R7: 유휴 자동 종료
+      app_lifecycle_management {                   # 주의: AWS Provider v5.47 이상 필요 — 버전 고정 권장
+        idle_settings {                            # R7: 유휴 자동 종료 (도메인 기본값)
           lifecycle_management  = "ENABLED"
           idle_timeout_in_minutes = 60
         }
@@ -94,18 +94,28 @@ resource "aws_sagemaker_studio_lifecycle_config" "harness" {
 
 ```hcl
 resource "aws_sagemaker_user_profile" "member" {
-  for_each          = toset(var.team_members)      # SCIM 동기화된 SSO 사용자
+  for_each          = toset(var.team_members)
   domain_id         = var.domain_id
   user_profile_name = each.value
+  # SSO 도메인에서는 Identity Center 사용자 매핑이 필수 — 누락 시 로그인 불가
+  single_sign_on_user_identifier = "UserName"
+  single_sign_on_user_value      = each.value      # SCIM 동기화된 Identity Center 사용자명
 }
 
-resource "aws_sagemaker_space" "team" {
+# Code Editor는 개인 Space 전용(공유 Space는 JupyterLab만 지원) — 인당 1개 생성
+resource "aws_sagemaker_space" "member" {
+  for_each   = toset(var.team_members)
   domain_id  = var.domain_id
-  space_name = "team-${var.project_code}"
-  ownership_settings { owner_user_profile_name = var.team_lead }
-  space_sharing_settings { sharing_type = "Shared" }
+  space_name = "ws-${var.project_code}-${each.value}"
+  ownership_settings {
+    owner_user_profile_name = aws_sagemaker_user_profile.member[each.value].user_profile_name
+  }
+  space_sharing_settings { sharing_type = "Private" }
   space_settings {
-    app_type = "CodeEditor"
+    app_type = "CodeEditor"                        # Provider v5.38+ (버전 고정 권장)
+    code_editor_app_settings {
+      default_resource_spec { instance_type = "ml.t3.xlarge" }
+    }
     space_storage_settings {
       ebs_storage_settings { ebs_volume_size_in_gb = 100 }
     }
@@ -139,7 +149,19 @@ EOF
 
 - **회수**: 과제 종료 시 `terraform destroy`(모듈 단위)로 Space·프로파일 삭제, EBS 데이터 파기 확인을 종료 체크리스트에 연동
 - **제약**: IDE 커스터마이징은 커스텀 이미지 범위로 한정. Code-OSS 기반이라 MS 마켓플레이스 일부 확장 미지원(Open VSX 사용)
-- **VPC 엔드포인트**: `sagemaker.api`·`sagemaker.runtime`·`studio` 등 인터페이스 엔드포인트 필요 (Landing Zone 공용 구성 재사용 검토)
+- **VPC 엔드포인트 (VpcOnly 필수 — 하나라도 누락 시 IDE 무한 로딩·이미지 풀 실패)**:
+
+| 구분 | 엔드포인트 | 용도 |
+|:---|:---|:---|
+| Interface (필수) | `sagemaker.api` / `sagemaker.runtime` / `sagemaker.studio` | 도메인 제어·Studio 접속 |
+| Interface (필수) | `ecr.api` / `ecr.dkr` | 커스텀 이미지 풀 |
+| Interface (필수) | `sts` | 실행 롤 자격증명 |
+| Interface (필수) | `logs` | CloudWatch Logs 수집 |
+| Interface (필수) | `bedrock-runtime` | Claude Code 키리스 호출 |
+| Gateway (필수) | `s3` | 이미지 레이어·아티팩트 |
+| Interface (워크로드별) | `secretsmanager` / `kms` / `ssm` | 과제 앱 필요 시 |
+
+  Landing Zone 공용 엔드포인트와 중복 여부를 먼저 확인하고, 8월 골든 패스 구축 기간에 전체 목록 연결성 시험을 선행한다 (구축 최대 난관 — 2.5 난이도 참조)
 
 ---
 
@@ -246,6 +268,7 @@ resource "aws_iam_role_policy" "bedrock_invoke" {
 ```
 
 - API 키를 만들지도, 배포하지도 않는다 — 자격증명은 롤에서 자동 해결
+- **크로스리전 추론 프로파일**: 서울 리전 미제공 모델은 APAC 추론 프로파일 경유 — `approved_model_arns`에 ① 프로파일 ARN(`arn:aws:bedrock:ap-northeast-2:<계정>:inference-profile/apac.anthropic.claude-*`)과 ② 대상 리전 파운데이션 모델 ARN을 **함께** 포함해야 호출 성공
 - 모델 ARN 화이트리스트로 승인 외 모델 호출 차단 (SCP 가드레일과 이중화)
 - 토큰 사용량은 CloudWatch 지표·비용 태그로 과제별 계측
 
@@ -256,7 +279,7 @@ resource "aws_iam_role_policy" "bedrock_invoke" {
 ### 5.1 산정 전제
 
 - 서울 리전, 2026년 상반기 요금 수준의 **개략 추정치** (버지니아 단가 × 서울 계수 약 1.2 적용, 확정 시 재산정)
-- 팀당 워크스페이스 1개, 4 vCPU/16GB급(t3.xlarge / ml.t3.xlarge), 스토리지 100GB/팀
+- 인스턴스 4 vCPU/16GB급(t3.xlarge / ml.t3.xlarge), 스토리지 100GB/팀. 1안은 인당 개인 Space 구조이나 유휴 자동 종료 기준 실가동은 팀당 워크스페이스 1개 상당으로 가정
 - **Bedrock 토큰 비용은 양안 공통·사용량 기반이므로 5.2~5.3에서 제외** (5.5에서 별도 추정)
 - 시나리오 A: 상시 가동(월 730h) / 시나리오 B: 업무시간 가동 + 유휴 자동 종료(월 200h)
 

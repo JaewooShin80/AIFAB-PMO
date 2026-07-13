@@ -74,7 +74,7 @@ with Diagram(
             board >> Edge(label="승인 시") >> tf
 
         with Cluster("Top-down Account (공식 과제)"):
-            td_dev = EC2("개발 서버")
+            td_dev = EC2("개발 서버\n(웹 IDE)")
             td_git = Gitlab("Git\n(형상관리)")
             td_pipe = Codepipeline("CodePipeline\n(빌드·이미지 스캔)")
             td_s3 = S3("S3")
@@ -101,7 +101,7 @@ with Diagram(
             secproc >> Edge(label="승인 시 운영 배포") >> prod
 
         with Cluster("Bottom-up Sandbox Account (자율 과제 · 시간제 가동: 셧다운/웨이크업)"):
-            bu_dev = EC2("개발 서버")
+            bu_dev = EC2("개발 서버\n(웹 IDE)")
             bu_git = Gitlab("Git\n(형상관리)")
             bu_pipe = Codepipeline("CodePipeline\n(빌드·이미지 스캔)")
             s3 = S3("S3")

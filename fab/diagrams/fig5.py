@@ -1,6 +1,6 @@
 from diagrams import Diagram, Cluster, Edge
 from diagrams.aws.general import Users
-from diagrams.aws.compute import EC2, Fargate
+from diagrams.aws.compute import EC2, Fargate, ECR
 from diagrams.aws.devtools import Codepipeline, Codebuild
 from diagrams.aws.security import Inspector
 from diagrams.aws.management import Cloudwatch
@@ -32,11 +32,12 @@ with Diagram(
         git = Gitlab("Git 저장소\n(과제별 리포지토리)")
         pipe = Codepipeline("CodePipeline")
         build = Codebuild("CodeBuild\n(빌드·테스트·시크릿 검출)")
-        scan = Inspector("이미지 스캔\n(ECR·Inspector)")
+        ecr = ECR("ECR\n(이미지 저장소·Tag 불변)")
+        scan = Inspector("이미지 스캔\n(Inspector)")
         dev = Fargate("dev 배포\n(샌드박스 Fargate · 자동)")
         mon = Cloudwatch("배포 후 모니터링\n(오류율·사용량 알람)")
 
-        git >> Edge(label="머지(PR)") >> pipe >> build >> scan
+        git >> Edge(label="머지(PR)") >> pipe >> build >> Edge(label="이미지 push") >> ecr >> scan
         scan >> Edge(label="스캔 통과") >> dev >> mon
         scan >> Edge(
             label="실패 시 차단·반려",
