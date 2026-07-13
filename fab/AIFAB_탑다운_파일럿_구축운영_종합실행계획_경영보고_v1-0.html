@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AIFAB 탑다운 파일럿 구축·운영 종합 실행계획 — 경영 보고</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  :root {
+    --ink: #14181f; --muted: #5b6472; --accent: #ea002c; --accent-soft: #fdeef1;
+    --line: #e3e7ee; --bg: #eef1f5; --card: #f8fafc; --navy: #1f2a44;
+  }
+  html { scroll-snap-type: y mandatory; }
+  body { background: var(--bg); font-family: "Pretendard", "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans KR", sans-serif; color: var(--ink); }
+  .slide {
+    width: min(1280px, 100vw); aspect-ratio: 16 / 9; margin: 24px auto; background: #fff;
+    border: 1px solid var(--line); box-shadow: 0 8px 28px rgba(20,24,31,.08);
+    padding: 3.2% 3.8%; display: flex; flex-direction: column; scroll-snap-align: center;
+    position: relative; overflow: hidden;
+  }
+  .kicker { font-size: 13px; font-weight: 700; letter-spacing: .14em; color: var(--accent); text-transform: uppercase; margin-bottom: 8px; }
+  h1 { font-size: 44px; line-height: 1.25; letter-spacing: -.01em; }
+  h2 { font-size: 30px; letter-spacing: -.01em; margin-bottom: 6px; }
+  .sub { color: var(--muted); font-size: 16px; margin-top: 14px; line-height: 1.6; }
+  .pagenum { position: absolute; bottom: 18px; right: 28px; font-size: 12px; color: var(--muted); }
+  .foot { position: absolute; bottom: 18px; left: 28px; font-size: 12px; color: var(--muted); }
+  .rule { height: 3px; width: 56px; background: var(--accent); border-radius: 2px; margin: 14px 0 22px; }
+  .body { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+  .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 26px; flex: 1; min-height: 0; }
+  .bullets { list-style: none; display: flex; flex-direction: column; gap: 14px; }
+  .bullets li { padding-left: 18px; position: relative; font-size: 17px; line-height: 1.55; }
+  .bullets li::before { content: ""; position: absolute; left: 0; top: .62em; width: 7px; height: 7px; border-radius: 2px; background: var(--accent); }
+  .bullets b { color: var(--navy); }
+  .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-top: auto; }
+  .kpi { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 16px 18px; }
+  .kpi .v { font-size: 26px; font-weight: 800; color: var(--navy); letter-spacing: -.01em; }
+  .kpi .v em { font-style: normal; color: var(--accent); }
+  .kpi .k { font-size: 12.5px; color: var(--muted); margin-top: 5px; line-height: 1.4; }
+  table { width: 100%; border-collapse: collapse; font-size: 15.5px; }
+  th, td { padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--line); line-height: 1.5; vertical-align: top; }
+  thead th { background: var(--navy); color: #fff; font-weight: 600; font-size: 14px; }
+  td.h { font-weight: 700; color: var(--navy); white-space: nowrap; }
+  .hl { background: var(--accent-soft); }
+  .callout { border-left: 4px solid var(--accent); background: var(--accent-soft); padding: 14px 18px; border-radius: 0 8px 8px 0; font-size: 16.5px; line-height: 1.55; }
+  .callout b { color: var(--accent); }
+  .steps { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; }
+  .step { background: var(--card); border: 1px solid var(--line); border-radius: 9px; padding: 12px 10px; font-size: 13px; line-height: 1.45; }
+  .step .n { display: inline-block; width: 20px; height: 20px; border-radius: 50%; background: var(--navy); color: #fff; font-size: 11.5px; font-weight: 700; text-align: center; line-height: 20px; margin-bottom: 7px; }
+  .step b { display: block; font-size: 13.5px; color: var(--navy); }
+  .step.now { border-color: var(--accent); background: var(--accent-soft); }
+  .step.now .n { background: var(--accent); }
+  .check { list-style: none; display: flex; flex-direction: column; gap: 9px; }
+  .check li { padding-left: 26px; position: relative; font-size: 14.5px; line-height: 1.5; }
+  .check li::before { content: "✓"; position: absolute; left: 0; top: 0; width: 18px; height: 18px; border-radius: 5px; background: var(--accent-soft); color: var(--accent); font-size: 12px; font-weight: 800; text-align: center; line-height: 18px; }
+  .panel { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 18px 20px; }
+  .panel h3 { font-size: 16.5px; color: var(--navy); margin-bottom: 12px; }
+  .cover { justify-content: center; background: linear-gradient(135deg, #1f2a44 0%, #131a2c 100%); color: #fff; }
+  .cover .kicker { color: #ff7d92; }
+  .cover h1 { color: #fff; font-size: 46px; }
+  .cover .meta { margin-top: 40px; font-size: 15px; color: #b8c0d0; line-height: 2; }
+  .cover .rule { width: 72px; }
+  .tag { display: inline-block; font-size: 12.5px; font-weight: 700; background: var(--accent-soft); color: var(--accent); border-radius: 999px; padding: 4px 12px; margin-left: 10px; vertical-align: middle; }
+  @media print {
+    body { background: #fff; }
+    .slide { width: 100%; height: 100vh; aspect-ratio: auto; margin: 0; border: none; box-shadow: none; page-break-after: always; }
+    @page { size: A4 landscape; margin: 0; }
+  }
+</style>
+</head>
+<body>
+
+<!-- 1. 표지 -->
+<section class="slide cover">
+  <div class="kicker">AIFAB · Top-down Pilot Master Plan</div>
+  <h1>AIFAB 탑다운 파일럿<br>구축·운영 종합 실행계획</h1>
+  <div class="rule"></div>
+  <div class="meta">
+    7월 착수 → 8월 말 셋업 완료 → 9월 첫째 주 파일럿 개시 → 9월 말 판정 → 10월 초 결과 보고<br>
+    v1.0 · 2026. 07. 12 · 작성 신재우 · 사내 검토용
+  </div>
+</section>
+
+<!-- 2. 전체 구조 -->
+<section class="slide">
+  <div class="kicker">Structure</div>
+  <h2>전체 구조 <span class="tag">두 트랙 병행 셋업 → 9월 실행</span></h2>
+  <div class="rule"></div>
+  <div class="body">
+    <table>
+      <thead><tr><th style="width:26%">트랙</th><th>내용</th><th style="width:18%">주관</th><th style="width:14%">완료 시한</th></tr></thead>
+      <tbody>
+        <tr><td class="h">A — 시스템 구축</td><td>골든 패스 템플릿, 보안 파이프라인, 계정·권한, 게이트 체계</td><td>AI 인프라팀</td><td><b>8/28</b></td></tr>
+        <tr><td class="h">B — 프로그램 셋업</td><td>거버넌스, 선발, KPI 동결, 온보딩, 지원 체계 편성</td><td>AI Board</td><td><b>8/28</b></td></tr>
+        <tr class="hl"><td class="h">C — 파일럿 운영</td><td>3주 스프린트, 게이트 심사, 배포, 종료·이관</td><td>AI Board + 전체</td><td>9/1~9/25</td></tr>
+        <tr><td class="h">보고 체계</td><td>주간 진척 + 마일스톤 경영 보고 5회</td><td>AI Board → 경영진</td><td>7월~10월 초</td></tr>
+      </tbody>
+    </table>
+    <div class="callout" style="margin-top:20px"><b>기준선.</b> 지금부터 8월 말까지 인프라 구성·프로그램 셋업을 완료하고, 파일럿은 9월 첫째 주에 개시한다. 준비 미완 시 킥오프를 순연한다 — 일정보다 전제 충족 우선.</div>
+    <div class="kpis" style="margin-top:20px">
+      <div class="kpi"><div class="v">2트랙</div><div class="k">시스템 구축·프로그램 셋업 병행 (7~8월)</div></div>
+      <div class="kpi"><div class="v">8/28</div><div class="k">셋업 완료 · Readiness Review (Go/No-Go)</div></div>
+      <div class="kpi"><div class="v">9/1</div><div class="k">파일럿 킥오프 (9월 첫째 주)</div></div>
+      <div class="kpi"><div class="v">10/2</div><div class="k">최종 결과 보고 — 확대 여부 결정</div></div>
+    </div>
+  </div>
+  <div class="foot">AIFAB 탑다운 파일럿 구축·운영 종합 실행계획 — 경영 보고</div><div class="pagenum">2</div>
+</section>
+
+<!-- 3. 마스터 일정 -->
+<section class="slide">
+  <div class="kicker">Master Schedule</div>
+  <h2>마스터 일정 <span class="tag">2026. 7. 13 ~ 10. 2</span></h2>
+  <div class="rule"></div>
+  <div class="body">
+    <div class="steps" style="margin-bottom:20px">
+      <div class="step"><span class="n">1</span><b>7월 3~4주</b>거버넌스 확정<br>골든 패스 구축 개시</div>
+      <div class="step"><span class="n">2</span><b>7월 말~8월 초</b>모집 공고·과제 접수<br>보안 파이프라인</div>
+      <div class="step"><span class="n">3</span><b>8월 2주</b>2단계 심사<br>선발 확정 (8/14)</div>
+      <div class="step"><span class="n">4</span><b>8월 3~4주</b>온보딩·교육<br>드라이런·KPI 동결</div>
+      <div class="step now"><span class="n">5</span><b>9월 1~3주</b>3주 스프린트<br>배포 9/17 · 데모 9/18</div>
+      <div class="step"><span class="n">6</span><b>9월 말~10월 초</b>판정 9/25<br>이관/회수 · 최종 보고</div>
+    </div>
+    <table>
+      <thead><tr><th style="width:15%">주차</th><th style="width:34%">Track A 시스템 구축</th><th style="width:34%">Track B 프로그램 셋업</th><th>보고·의사결정</th></tr></thead>
+      <tbody>
+        <tr><td class="h">7월 3~5주</td><td>Landing Zone 점검, 골든 패스·보안 파이프라인 구축</td><td>예외 규정 승인(7/24), KPI 산식, 모집 공고</td><td><b>7/17 착수 보고</b></td></tr>
+        <tr><td class="h">8월 1~2주</td><td>템플릿 완성, 통합 시험</td><td>접수 마감(8/7) → 2단계 심사 → <b>선발 확정(8/14)</b></td><td><b>8/7 중간 점검 보고</b></td></tr>
+        <tr class="hl"><td class="h">8월 3~4주</td><td>계정 발급, <b>통합 드라이런·완비 선언</b></td><td>온보딩 2주, <b>KPI 동결 서명</b></td><td><b>8/28 준비 완료 보고 · Go/No-Go</b></td></tr>
+        <tr class="hl"><td class="h">9월 1~3주</td><td>운영 지원(핫라인), Gate 2 검사·배포</td><td><b>9/1 킥오프</b> → Gate 1(9/11) → 배포(9/17)</td><td><b>9/18 데모데이</b> (경영진 참석)</td></tr>
+        <tr><td class="h">9월 4주~10월</td><td>이관 7단계 / 계정 Frozen</td><td>회고·스코어카드 산정, 최종 보고서</td><td>9/24 심의 → <b>10/2 최종 결과 보고</b></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="foot">AIFAB 탑다운 파일럿 구축·운영 종합 실행계획 — 경영 보고</div><div class="pagenum">3</div>
+</section>
+
+<!-- 4. R&R -->
+<section class="slide">
+  <div class="kicker">Roles &amp; Responsibilities</div>
+  <h2>R&amp;R 요약 <span class="tag">상세 RACI는 실무 문서 참조</span></h2>
+  <div class="rule"></div>
+  <div class="body">
+    <table>
+      <thead><tr><th style="width:22%">역할</th><th style="width:26%">구성</th><th>핵심 책임</th></tr></thead>
+      <tbody>
+        <tr class="hl"><td class="h">AI Board</td><td>거버넌스 + 운영 전담 2~5명</td><td>프로그램 총괄 — 게이트 승인·Go/No-Go 심의, 선발, 기술상담, KPI 측정, 경영 보고</td></tr>
+        <tr><td class="h">AI 인프라팀</td><td>기존 조직 (4~6주 전담 투입)</td><td>골든 패스 구축·운영, 계정 프로비저닝, 배포 파이프라인, 리소스 회수</td></tr>
+        <tr><td class="h">정보보호팀</td><td>기존 조직</td><td>배포 보안 승인(Gate 2), 고위험(Red) 코드 리뷰 참여</td></tr>
+        <tr><td class="h">멘토</td><td>AI Board 내 팀원 — 유사 과제군당 1명(1:n)</td><td>과제 방향성·진행 점검, 에이전트 구조 조언 (코드 작업 범위 외)</td></tr>
+        <tr><td class="h">기술상담 전담</td><td>1명 (초기: 보드 내 FAB 전담 인원)</td><td>코드 블로커 해결, 멘토 미해결 복합 이슈 — 신청제·트리아지 운영</td></tr>
+        <tr><td class="h">챔피언 · 부서장</td><td>팀당 1명 · 참여 부서</td><td>스탠드업 주관·사용 정착 / 3주 전담 시간 보장·과제 스폰서</td></tr>
+        <tr><td class="h">시티즌 개발자</td><td>2~3팀, 팀당 3~5명 혼합팀</td><td>과제 수행 — 개발·게이트 발표·데모데이·인수인계</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="foot">AIFAB 탑다운 파일럿 구축·운영 종합 실행계획 — 경영 보고</div><div class="pagenum">4</div>
+</section>
+
+<!-- 5. 셋업 완료 기준 -->
+<section class="slide">
+  <div class="kicker">Readiness Review</div>
+  <h2>셋업 완료 기준 <span class="tag">8/28 킥오프 Go/No-Go</span></h2>
+  <div class="rule"></div>
+  <div class="body">
+    <div class="cols">
+      <div class="panel">
+        <h3>Track A — 시스템 구축 (AI 인프라팀)</h3>
+        <ul class="check">
+          <li>골든 패스 6대 템플릿 완비 (ECS·Lambda·RDS·비용태그·관측성·Secrets)</li>
+          <li>폼 입력 → 레포 자동 생성 → 스테이징 배포 <b>1시간 이내</b> (비개발자 드라이런 통과)</li>
+          <li>SAST·시크릿 검출 파이프라인 내장 (치명 취약점 0건 게이트 동작 확인)</li>
+          <li>위험 등급(3-lane) 분류 기준·리뷰 절차 확정</li>
+          <li>참여자 전원 계정·권한 발급, 무중단 배포·자동 롤백 검증</li>
+        </ul>
+      </div>
+      <div class="panel">
+        <h3>Track B — 프로그램 셋업 (AI Board)</h3>
+        <ul class="check">
+          <li>파일럿 예외 규정 승인 (기획안 주체 조항 보완)</li>
+          <li>팀 2~3개 선발 확정, 부서장 3주 전담 서면 합의</li>
+          <li>KPI 6종·Go/No-Go 스코어카드 <b>서명 동결</b></li>
+          <li>전원 교육 이수 + 드라이런 배포 1회 성공</li>
+          <li>멘토·기술상담 전담·챔피언 지정, 정기 기술상담(신청제)·전용 채널 개설</li>
+        </ul>
+      </div>
+    </div>
+    <div class="callout" style="margin-top:20px"><b>Go/No-Go 원칙.</b> 전 항목 충족 시에만 킥오프 Go — 하나라도 미충족이면 1~2주 순연한다. 실패 확률이 높은 파일럿을 일정 때문에 강행하지 않는다.</div>
+  </div>
+  <div class="foot">AIFAB 탑다운 파일럿 구축·운영 종합 실행계획 — 경영 보고</div><div class="pagenum">5</div>
+</section>
+
+<!-- 6. 보고 체계 -->
+<section class="slide">
+  <div class="kicker">Reporting</div>
+  <h2>보고 체계 <span class="tag">경영 보고 5회 + 주간 진척</span></h2>
+  <div class="rule"></div>
+  <div class="body">
+    <table>
+      <thead><tr><th style="width:5%">#</th><th style="width:22%">보고</th><th style="width:14%">시점</th><th style="width:33%">핵심 안건</th><th>의사결정</th></tr></thead>
+      <tbody>
+        <tr><td>1</td><td class="h">착수 보고</td><td><b>7/17(금)</b></td><td>종합 계획·R&amp;R·예산</td><td>계획 승인, 자원 투입 확정</td></tr>
+        <tr><td>2</td><td class="h">중간 점검 보고</td><td><b>8/7(금)</b></td><td>시스템 구축 진척, 과제 접수 현황</td><td>리스크 조치 승인</td></tr>
+        <tr class="hl"><td>3</td><td class="h">준비 완료 보고</td><td><b>8/28(금)</b></td><td>Readiness 체크리스트 결과</td><td><b>킥오프 Go/No-Go</b></td></tr>
+        <tr><td>4</td><td class="h">데모데이</td><td><b>9/18(금)</b></td><td>팀별 배포 결과 시연 (5~10분)</td><td>— (참관)</td></tr>
+        <tr class="hl"><td>5</td><td class="h">최종 결과 보고</td><td><b>10/2(금)</b></td><td>KPI 실측, 팀별 출구 결정, 위험 조정 ROI</td><td><b>확대(2차 코호트) 여부</b></td></tr>
+      </tbody>
+    </table>
+    <div class="kpis" style="margin-top:20px">
+      <div class="kpi"><div class="v">매주 금</div><div class="k">주간 진척 보고 — AI Board → 스폰서·경영진 (1페이지)</div></div>
+      <div class="kpi"><div class="v">매일</div><div class="k">스프린트 데일리(9월) — 챔피언 → AI Board</div></div>
+      <div class="kpi"><div class="v">9/24</div><div class="k">AI Board 심의 — 스코어카드 기반 출구 결정</div></div>
+      <div class="kpi"><div class="v">5회</div><div class="k">마일스톤 경영 보고 (착수→중간→준비→데모→최종)</div></div>
+    </div>
+  </div>
+  <div class="foot">AIFAB 탑다운 파일럿 구축·운영 종합 실행계획 — 경영 보고</div><div class="pagenum">6</div>
+</section>
+
+<!-- 7. 핵심 리스크 -->
+<section class="slide">
+  <div class="kicker">Risk Management</div>
+  <h2>핵심 리스크와 대응 <span class="tag">조기 신호 기반 관리</span></h2>
+  <div class="rule"></div>
+  <div class="body">
+    <table>
+      <thead><tr><th style="width:26%">리스크</th><th style="width:30%">조기 신호</th><th>대응</th></tr></thead>
+      <tbody>
+        <tr class="hl"><td class="h">골든 패스 구축 지연</td><td>8/7 중간 점검 시 템플릿 3종 미만 완성</td><td>범위 축소(핵심 2~3종 우선), 킥오프 순연 여부를 8/28이 아닌 <b>8/14에 조기 검토</b></td></tr>
+        <tr><td class="h">선발 미달 (지원 부족)</td><td>8/7 접수 마감 시 부서 2개 미만</td><td>부서장 대상 설명회 추가, 모집 1주 연장 (온보딩 압축으로 흡수)</td></tr>
+        <tr><td class="h">예외 규정 승인 지연</td><td>7/24 미승인</td><td>착수 조건이므로 최우선 에스컬레이션 — 미승인 상태로 선발 공고 금지</td></tr>
+        <tr><td class="h">스프린트 중 품질 이슈</td><td>Gate 1에서 중단/축소 과반</td><td>데모데이 범위 조정, 원인을 최종 보고에 반영 (파일럿 자체가 벤치마크 수립 목적)</td></tr>
+      </tbody>
+    </table>
+    <div class="callout" style="margin-top:20px"><b>관리 원칙.</b> 모든 리스크에 조기 신호와 판단 시점을 사전 지정 — 문제를 8월 말 Go/No-Go까지 이월하지 않고 발견 즉시 조치한다.</div>
+  </div>
+  <div class="foot">AIFAB 탑다운 파일럿 구축·운영 종합 실행계획 — 경영 보고</div><div class="pagenum">7</div>
+</section>
+
+</body>
+</html>
