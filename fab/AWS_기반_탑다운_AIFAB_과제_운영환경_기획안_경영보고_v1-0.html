@@ -109,7 +109,7 @@
         <tr><td class="h">과제 성격</td><td>사업 계획으로 확정된 공식 과제</td><td>현장 자율 제안 과제 (실험·검증)</td></tr>
         <tr class="hl"><td class="h">가동</td><td><b>상시 가동</b> (SLO 관리)</td><td>시간제 가동 (셧다운/웨이크업)</td></tr>
         <tr class="hl"><td class="h">배포</td><td><b>스테이징 → 운영 + 승인 게이트</b></td><td>dev 배포까지 (게이트 없음)</td></tr>
-        <tr class="hl"><td class="h">데이터</td><td><b>통제 하 실데이터 연동 허용</b></td><td>실데이터 금지 (마스킹·비식별만)</td></tr>
+        <tr class="hl"><td class="h">데이터</td><td><b>통제 하 실데이터 연동 허용 (민감정보 원본 포함)</b></td><td>실데이터 허용 — 민감정보 마스킹 원칙</td></tr>
         <tr><td class="h">수행 주체</td><td>지정된 개발·운영 조직</td><td>시티즌 개발자 (교육 이수자)</td></tr>
         <tr><td class="h">종료</td><td>사업 판단에 따른 종료·이관</td><td>저활용 자동 선셋</td></tr>
       </tbody>
@@ -170,7 +170,7 @@
         <tr><td class="h">종료 시</td><td>데이터 파기 확인을 종료 체크리스트에 포함</td></tr>
       </tbody>
     </table>
-    <div class="callout" style="margin-top:18px"><b>바텀업과의 경계.</b> 실데이터는 탑다운에서만 — 바텀업은 마스킹·비식별 데이터만 허용되어, 격상 시 실데이터 연동 재설계와 보안 재심사를 반드시 거친다.</div>
+    <div class="callout" style="margin-top:18px"><b>바텀업과의 경계.</b> 민감정보 원본은 탑다운에서만 — 바텀업은 민감정보를 마스킹하여 사용하므로, 격상 시 마스킹 해제(원본 연동) 재설계와 보안 재심사를 반드시 거친다.</div>
   </div>
   <div class="foot">AWS 기반 탑다운(AIFAB) 과제 운영환경 기획안</div><div class="pagenum">6</div>
 </section>
@@ -184,7 +184,7 @@
     <div class="steps" style="margin-bottom:18px">
       <div class="step"><span class="n">1</span><b>코드 리뷰</b>품질·보안·표준 준수</div>
       <div class="step"><span class="n">2</span><b>문서화</b>운영 절차서(Runbook)</div>
-      <div class="step"><span class="n">3</span><b>실데이터 재설계</b>보안 재심사</div>
+      <div class="step"><span class="n">3</span><b>마스킹 해제 재설계</b>보안 재심사</div>
       <div class="step"><span class="n">4</span><b>운영 조직 지정</b>오너십·장애 대응</div>
       <div class="step"><span class="n">5</span><b>재프로비저닝</b>운영급 표준 스택</div>
       <div class="step"><span class="n">6</span><b>이관·검증</b>승인 게이트 통과</div>

@@ -91,7 +91,7 @@
       <div class="kpi"><div class="v">10분</div><div class="k">AI 다각도 사전심사 (수작업 수일 → 1일 내 승인 목표)</div></div>
       <div class="kpi"><div class="v">30분</div><div class="k">승인 후 표준 환경 자동 생성 (Terraform)</div></div>
       <div class="kpi"><div class="v">시간제 가동</div><div class="k">평일 08~20시 · 셧다운/웨이크업 자동화</div></div>
-      <div class="kpi"><div class="v">실데이터 <em>금지</em></div><div class="k">마스킹·비식별만 반입, Macie 상시 탐지</div></div>
+      <div class="kpi"><div class="v">민감정보 <em>마스킹</em></div><div class="k">실데이터 허용 — 민감정보는 마스킹 반입, Macie 상시 탐지</div></div>
     </div>
   </div>
   <div class="foot">AWS 기반 바텀업(샌드박스) 과제 운영환경 기획안</div><div class="pagenum">2</div>
@@ -110,7 +110,7 @@
         <tr class="hl"><td class="h">심사</td><td><b>AI 다각도 심사·트리아지</b> 후 보드 승인</td><td>AI 심사 바이패스, 보드 확인</td></tr>
         <tr class="hl"><td class="h">가동</td><td><b>시간제 가동</b> — 비용 구조적 통제</td><td>상시 가동 (SLO 관리)</td></tr>
         <tr class="hl"><td class="h">배포</td><td><b>dev 배포까지</b> (승인 게이트 없음)</td><td>스테이징 → 운영 + 승인 게이트</td></tr>
-        <tr><td class="h">데이터</td><td>실데이터 금지</td><td>통제 하 실데이터 연동 허용</td></tr>
+        <tr><td class="h">데이터</td><td>실데이터 허용 — 민감정보 마스킹 원칙</td><td>통제 하 실데이터 연동 허용</td></tr>
         <tr><td class="h">종료</td><td><b>저활용 자동 선셋</b></td><td>사업 판단에 따른 종료·이관</td></tr>
       </tbody>
     </table>
@@ -171,7 +171,7 @@
         <li><b>암호화 키 계정별 분리 관리</b> + 개발자 권한 상승 원천 차단(권한 경계) — 과제 간 데이터 혼용 불가 구조</li>
         <li><b>AI 호출 전량 감사 기록</b> + 민감정보 필터(가드레일) + 팀별 사용량 상한 — 무제한 AI 과금 리스크 차단</li>
         <li>사내망 한정 접근(인터넷 인바운드 차단), 사번 기반 SSO 자동 연동</li>
-        <li>실데이터 유입은 <b>Macie가 상시 탐지</b>, 산출물 다운로드 금지(DRM·워터마크)</li>
+        <li>마스킹되지 않은 민감정보 유입은 <b>Macie가 상시 탐지</b>, 산출물 다운로드 금지(DRM·워터마크)</li>
         <li>인프라 변경은 <b>Terraform 코드 리뷰(PR)로만</b> — 콘솔 우회 경로 차단</li>
       </ul>
     </div>
