@@ -49,7 +49,7 @@
 
 ### 2.2 개발환경 (확정)
 
-- **웹 IDE: EC2 + Coder 채택** — SSO 로그인만으로 Claude Code·AIFAB 하네스가 적용된 브라우저 VS Code에 즉시 진입. 형상관리는 사내 GitLab, LLM은 Bedrock 키리스 연동(API 키 없음), 유휴 자동 종료로 시간제 가동
+- **웹 IDE: EC2 + Coder 채택** — SSO 로그인만으로 Claude Code·AIFAB 하네스가 적용된 브라우저 VS Code에 즉시 진입. 형상관리는 사내 GitLab, 유휴 자동 종료로 시간제 가동. LLM은 **코딩 작업 = Claude 팀플랜(정보보호팀 승인 전제) / 에이전트 호출 = Bedrock 키리스** 이원 운영(웹IDE 구축방향 3.4)
 - 개발 흐름: Coder 웹 IDE → GitLab → CodePipeline(빌드·보안 스캔) → ECR → Fargate 스테이징 → 승인 게이트 → 운영 배포(Blue/Green)
 - 상세: `AIFAB_웹IDE_개발환경_구축방향_최종_v1-0.md`
 
