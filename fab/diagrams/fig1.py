@@ -1,8 +1,7 @@
 from diagrams import Diagram, Cluster, Edge
 from diagrams.aws.general import Users, TraditionalServer, GenericFirewall
 from diagrams.aws.security import SingleSignOn, Guardduty, SecurityHub
-from diagrams.aws.network import APIGateway
-from diagrams.aws.compute import EC2, Lambda, Fargate
+from diagrams.aws.compute import EC2, Fargate
 from diagrams.aws.devtools import Codepipeline
 from diagrams.aws.integration import StepFunctions
 from diagrams.aws.storage import S3
@@ -56,21 +55,18 @@ with Diagram(
                 },
             ):
                 sso = SingleSignOn("IAM Identity Center\n(SSO·최소권한)")
+                agent = Bedrock("적합성 심사 AI Agent\n(Bedrock)")
                 portal = TraditionalServer("신청 포털\n(Top-Down/Bottom-up 선택)")
-                apigw = APIGateway("API Gateway")
-                intake = Lambda("접수 처리")
                 wf = StepFunctions("승인 워크플로\n(Step Functions)")
-                agent = Bedrock("Bedrock AI Agent\n(적합성 사전심사)")
 
             board = Users("운영 보드\n(AI Board)")
             tf = Terraform("Terraform\n(자원 자동 생성)")
 
-            # 2행 배치 — 1행: SSO → 포털 → API GW / 2행: 접수 → 워크플로 → AI 심사
-            sso >> portal >> apigw
-            apigw >> Edge(label="접수", constraint="false", tailport="s", headport="n") >> intake
-            intake >> wf
-            wf >> Edge(label="Bottom-up: AI 사전심사") >> agent >> board
-            wf >> Edge(label="Top-Down: AI 심사 바이패스", style="dashed") >> board
+            # 2행 배치 — 1행: IAM → 적합성 심사 AI Agent / 2행: 신청 포털 → 승인 워크플로
+            sso >> Edge(label="적합성 심사") >> agent
+            agent >> Edge(label="샌드박스 안내", constraint="false", tailport="s", headport="n") >> portal
+            portal >> wf
+            wf >> board
             board >> Edge(label="승인 시") >> tf
 
         with Cluster("Top-down Account (공식 과제)"):
@@ -143,6 +139,6 @@ with Diagram(
         app >> Edge(label="로그·지표", style="dashed", constraint="false") >> cw
 
     user >> sso
-    user >> Edge(style="invis") >> intake  # 접수 처리를 SSO와 같은 열(2행)로 고정
+    user >> Edge(style="invis") >> portal  # 신청 포털을 SSO와 같은 열(2행)로 고정
     user >> Edge(label="접속(SSO)", style="dashed") >> td_dev
     user >> Edge(label="접속(SSO)", style="dashed") >> bu_dev
