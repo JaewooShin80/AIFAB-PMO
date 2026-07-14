@@ -5,7 +5,7 @@
 | 버전 | 최종 v1-0 (2026-07-14) |
 | 결정 | **EC2 + Coder(자체 운영 플랫폼) 채택** — SageMaker Code Editor 안은 미채택 |
 | 대상 | AI 인프라팀 (구축·운영), AI Board (승인) |
-| 근거 문서 | `../fab/AIFAB_웹IDE_개발환경_Terraform_세팅가이드_v1-0.md` (2안 비교 검토 원본) |
+| 근거 문서 | `../fab/26.07.13_AIFAB_웹IDE_개발환경_Terraform_세팅가이드_v1-0.md` (2안 비교 검토 원본) |
 
 ---
 
@@ -99,6 +99,6 @@
 
 ## 7. 참고 문서
 
-- 비교 검토 원본(1안/2안·Terraform 골격·VPC Endpoint 목록): `../fab/AIFAB_웹IDE_개발환경_Terraform_세팅가이드_v1-0.md`
+- 비교 검토 원본(1안/2안·Terraform 골격·VPC Endpoint 목록): `../fab/26.07.13_AIFAB_웹IDE_개발환경_Terraform_세팅가이드_v1-0.md`
 - 협의 사항: `AIFAB_AI인프라팀_정보보호팀_협의사항_최종_v1-0.md`
 - 종합 계획(PMO 제출용): `AIFAB_기획_상세준비_운영계획_PMO제출_v1-0.md`
