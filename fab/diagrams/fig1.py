@@ -60,83 +60,96 @@ with Diagram(
                 wf = StepFunctions("승인 워크플로\n(Step Functions)")
 
             board = Users("운영 보드\n(AI Board)")
-            tf = Terraform("Terraform\n(자원 자동 생성)")
 
             # 2행 배치 — 1행: IAM → 적합성 심사 AI Agent / 2행: 신청 포털 → 승인 워크플로
             sso >> Edge(label="적합성 심사") >> agent
             agent >> Edge(label="샌드박스 안내", constraint="false", tailport="s", headport="n") >> portal
             portal >> wf
             wf >> board
-            board >> Edge(label="승인 시") >> tf
 
-        with Cluster("Top-down Account (공식 과제)"):
-            td_dev = EC2("개발 서버\n(웹 IDE)")
-            td_git = Gitlab("Git\n(형상관리)")
-            td_pipe = Codepipeline("CodePipeline\n(빌드·이미지 스캔)")
-            td_s3 = S3("S3")
-            td_rds = RDS("RDS")
-            td_app = Fargate("과제 앱\n(Fargate · dev 배포 · 확인용)")
+        # ─── Terraform 이후 전체 = SKAX 수행 구축 범위 ───
+        with Cluster(
+            "구축 범위 — SKAX 수행",
+            graph_attr={
+                "style": "dashed,rounded",
+                "color": "#1f2a44",
+                "penwidth": "2.4",
+                "fontsize": "15",
+                "labeljust": "l",
+            },
+        ):
+            tf = Terraform("Terraform\n(자원 자동 생성)")
 
-            td_dev >> Edge(label="개발 시 활용", style="dashed") >> td_s3
-            td_dev >> Edge(label="개발 시 활용", style="dashed") >> td_rds
-            td_dev >> Edge(label="개발 후") >> td_git >> td_pipe >> Edge(label="스캔 통과 시\ndev 배포") >> td_app
+            with Cluster("Top-down Account (공식 과제)"):
+                td_dev = EC2("개발 서버\n(웹 IDE)")
+                td_git = Gitlab("Git\n(형상관리)")
+                td_pipe = Codepipeline("CodePipeline\n(빌드·이미지 스캔)")
+                td_s3 = S3("S3")
+                td_rds = RDS("RDS")
+                td_app = Fargate("과제 앱\n(Fargate · dev 배포 · 확인용)")
 
-            with Cluster(
-                "사내 정보보안 프로세스 확인",
-                graph_attr={"style": "rounded", "color": "#1f2a44", "penwidth": "2"},
-            ):
-                secproc = GenericFirewall("보드·정보보호팀\n승인 게이트")
+                td_dev >> Edge(label="개발 시 활용", style="dashed") >> td_s3
+                td_dev >> Edge(label="개발 시 활용", style="dashed") >> td_rds
+                td_dev >> Edge(label="개발 후") >> td_git >> td_pipe >> Edge(label="스캔 통과 시\ndev 배포") >> td_app
 
-            with Cluster(
-                "운영 서버 (24h / 365D)",
-                graph_attr={"style": "rounded", "color": "#1f2a44", "penwidth": "2"},
-            ):
-                prod = EC2("운영 서비스\n(상시 가동)")
+                with Cluster(
+                    "사내 정보보안 프로세스 확인",
+                    graph_attr={"style": "rounded", "color": "#1f2a44", "penwidth": "2"},
+                ):
+                    secproc = GenericFirewall("보드·정보보호팀\n승인 게이트")
 
-            td_app >> Edge(label="검증 완료 후") >> secproc
-            secproc >> Edge(label="승인 시 운영 배포") >> prod
+                with Cluster(
+                    "운영 서버 (24h / 365D)",
+                    graph_attr={"style": "rounded", "color": "#1f2a44", "penwidth": "2"},
+                ):
+                    prod = EC2("운영 서비스\n(상시 가동)")
 
-        with Cluster("Bottom-up Sandbox Account (자율 과제 · 시간제 가동: 셧다운/웨이크업)"):
-            bu_dev = EC2("개발 서버\n(웹 IDE)")
-            bu_git = Gitlab("Git\n(형상관리)")
-            bu_pipe = Codepipeline("CodePipeline\n(빌드·이미지 스캔)")
-            s3 = S3("S3")
-            rds = RDS("RDS")
-            app = Fargate("과제 앱\n(Fargate · dev 배포)")
+                td_app >> Edge(label="검증 완료 후") >> secproc
+                secproc >> Edge(label="승인 시 운영 배포") >> prod
 
-            bu_dev >> Edge(label="개발 시 활용", style="dashed") >> s3
-            bu_dev >> Edge(label="개발 시 활용", style="dashed") >> rds
-            bu_dev >> Edge(label="개발 후") >> bu_git >> bu_pipe >> Edge(label="스캔 통과 시\ndev 배포") >> app
+            with Cluster("Bottom-up Sandbox Account (자율 과제 · 시간제 가동: 셧다운/웨이크업)"):
+                bu_dev = EC2("개발 서버\n(웹 IDE)")
+                bu_git = Gitlab("Git\n(형상관리)")
+                bu_pipe = Codepipeline("CodePipeline\n(빌드·이미지 스캔)")
+                s3 = S3("S3")
+                rds = RDS("RDS")
+                app = Fargate("과제 앱\n(Fargate · dev 배포)")
 
-        app >> Edge(
-            label="격상 이관\n(보드·정보보호팀 승인 게이트)",
-            style="dashed",
-            color="firebrick",
-            fontcolor="firebrick",
-            penwidth="2",
-        ) >> secproc
+                bu_dev >> Edge(label="개발 시 활용", style="dashed") >> s3
+                bu_dev >> Edge(label="개발 시 활용", style="dashed") >> rds
+                bu_dev >> Edge(label="개발 후") >> bu_git >> bu_pipe >> Edge(label="스캔 통과 시\ndev 배포") >> app
 
-        with Cluster("보안·관측 (전 계정 공통)"):
-            trail = Cloudtrail("CloudTrail")
-            gd = Guardduty("GuardDuty")
-            sh = SecurityHub("Security Hub")
-            cw = Cloudwatch("CloudWatch")
-            # 배치용 비가시 flat edge(역방향, head가 위로): CloudTrail(위)→CloudWatch(아래) 순서 고정
-            cw >> Edge(minlen="0", style="invis") >> sh
-            sh >> Edge(minlen="0", style="invis") >> gd
-            gd >> Edge(minlen="0", style="invis") >> trail
-            # 표시용 화살표 (배치에 영향 없음) — 세로 흐름: 아래 변 중앙(s) → 위 변 중앙(n)
-            trail >> Edge(constraint="false", tailport="s", headport="n") >> gd
-            gd >> Edge(constraint="false", tailport="s", headport="n") >> sh
-            sh >> Edge(constraint="false", tailport="s", headport="n") >> cw
+            app >> Edge(
+                label="격상 이관\n(보드·정보보호팀 승인 게이트)",
+                style="dashed",
+                color="firebrick",
+                fontcolor="firebrick",
+                penwidth="2",
+            ) >> secproc
 
-        # 열 위치 고정용 비가시 앵커 (CloudTrail 기준)
-        prod >> Edge(style="invis") >> trail
+            with Cluster("보안·관측 (전 계정 공통)"):
+                trail = Cloudtrail("CloudTrail")
+                gd = Guardduty("GuardDuty")
+                sh = SecurityHub("Security Hub")
+                cw = Cloudwatch("CloudWatch")
+                # 배치용 비가시 flat edge(역방향, head가 위로): CloudTrail(위)→CloudWatch(아래) 순서 고정
+                cw >> Edge(minlen="0", style="invis") >> sh
+                sh >> Edge(minlen="0", style="invis") >> gd
+                gd >> Edge(minlen="0", style="invis") >> trail
+                # 표시용 화살표 (배치에 영향 없음) — 세로 흐름: 아래 변 중앙(s) → 위 변 중앙(n)
+                trail >> Edge(constraint="false", tailport="s", headport="n") >> gd
+                gd >> Edge(constraint="false", tailport="s", headport="n") >> sh
+                sh >> Edge(constraint="false", tailport="s", headport="n") >> cw
 
-        tf >> Edge(label="환경 자동 세팅") >> td_dev
-        tf >> Edge(label="환경 자동 세팅") >> bu_dev
-        prod >> Edge(label="로그·지표", style="dashed", constraint="false") >> cw
-        app >> Edge(label="로그·지표", style="dashed", constraint="false") >> cw
+            # 열 위치 고정용 비가시 앵커 (CloudTrail 기준)
+            prod >> Edge(style="invis") >> trail
+
+            tf >> Edge(label="환경 자동 세팅") >> td_dev
+            tf >> Edge(label="환경 자동 세팅") >> bu_dev
+            prod >> Edge(label="로그·지표", style="dashed", constraint="false") >> cw
+            app >> Edge(label="로그·지표", style="dashed", constraint="false") >> cw
+
+        board >> Edge(label="승인 시") >> tf
 
     user >> sso
     user >> Edge(style="invis") >> portal  # 신청 포털을 SSO와 같은 열(2행)로 고정
